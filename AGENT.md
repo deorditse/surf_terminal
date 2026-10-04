@@ -269,7 +269,7 @@ Suggested failure families include validation, authentication, host-key, transpo
 Generate code with:
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 ```
 
 After changing annotated types, regenerate before analysis and tests.
@@ -283,7 +283,6 @@ Use `go_router`. Initial route areas are:
 /connections/new
 /connections/:profileId/edit
 /terminal/:sessionId
-/sftp
 /snippets
 /snippets/new
 /snippets/:snippetId/edit
@@ -377,7 +376,7 @@ flutter pub outdated
 When generated sources change:
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 git diff --exit-code -- '*.freezed.dart' '*.g.dart'
 ```
 

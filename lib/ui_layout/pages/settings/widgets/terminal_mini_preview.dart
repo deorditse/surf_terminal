@@ -19,7 +19,7 @@ class TerminalMiniPreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(SurfRadii.sm),
       ),
       child: Text(
-        'preview@surf:~\$ echo ready\nready',
+        'surf@local:~\$ echo ready\nready',
         style: TextStyle(
           color: preferences.terminalForeground,
           fontFamily: 'monospace',

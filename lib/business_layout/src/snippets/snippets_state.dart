@@ -1,19 +1,37 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
+
+part 'snippets_state.freezed.dart';
 
 enum SnippetsStatus { loading, success, failure }
 
-final class SnippetsState {
-  SnippetsState({
-    this.status = SnippetsStatus.loading,
-    List<CommandSnippet> snippets = const <CommandSnippet>[],
-    this.filter = '',
-    this.errorMessage,
-  }) : snippets = List<CommandSnippet>.unmodifiable(snippets);
+@freezed
+sealed class SnippetsState with _$SnippetsState {
+  const SnippetsState._();
 
-  final SnippetsStatus status;
-  final List<CommandSnippet> snippets;
-  final String filter;
-  final String? errorMessage;
+  const factory SnippetsState.loading({
+    @Default(<CommandSnippet>[]) List<CommandSnippet> snippets,
+    @Default('') String filter,
+    String? errorMessage,
+  }) = SnippetsLoading;
+
+  const factory SnippetsState.success({
+    required List<CommandSnippet> snippets,
+    @Default('') String filter,
+    String? errorMessage,
+  }) = SnippetsSuccess;
+
+  const factory SnippetsState.failure({
+    required List<CommandSnippet> snippets,
+    @Default('') String filter,
+    required String errorMessage,
+  }) = SnippetsFailure;
+
+  SnippetsStatus get status => switch (this) {
+    SnippetsLoading() => SnippetsStatus.loading,
+    SnippetsSuccess() => SnippetsStatus.success,
+    SnippetsFailure() => SnippetsStatus.failure,
+  };
 
   List<CommandSnippet> get filteredSnippets {
     final query = filter.trim().toLowerCase();
@@ -30,17 +48,4 @@ final class SnippetsState {
       }),
     );
   }
-
-  SnippetsState copyWith({
-    SnippetsStatus? status,
-    List<CommandSnippet>? snippets,
-    String? filter,
-    String? errorMessage,
-    bool clearError = false,
-  }) => SnippetsState(
-    status: status ?? this.status,
-    snippets: snippets ?? this.snippets,
-    filter: filter ?? this.filter,
-    errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
-  );
 }

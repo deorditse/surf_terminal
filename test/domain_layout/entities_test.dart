@@ -72,7 +72,6 @@ void main() {
   test('TerminalPreferences preserves defaults and copies every value', () {
     const defaults = TerminalPreferences();
     final changed = defaults.copyWith(
-      autoTheme: false,
       palette: TerminalPalette.tide,
       fontSize: 16,
       cursorStyle: TerminalCursorStyle.block,
@@ -85,7 +84,6 @@ void main() {
 
     expect(defaults.palette, TerminalPalette.midnight);
     expect(defaults.cursorStyle, TerminalCursorStyle.bar);
-    expect(changed.autoTheme, isFalse);
     expect(changed.palette, TerminalPalette.tide);
     expect(changed.fontSize, 16);
     expect(changed.cursorStyle, TerminalCursorStyle.block);

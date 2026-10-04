@@ -8,23 +8,21 @@ AppDependencies emptyDependencies() => AppDependencies(
   profilesRepository: InMemoryProfilesRepository(initialProfiles: const []),
   snippetsRepository: InMemorySnippetsRepository(),
   settingsRepository: InMemorySettingsRepository(),
-  sftpRepository: InMemorySftpRepository(),
 );
 
 void main() {
   testWidgets('empty host state creates a validated profile', (tester) async {
-    await tester.pumpWidget(
-      SurfTerminalApp(dependencies: emptyDependencies()),
-    );
+    final dependencies = emptyDependencies();
+    await tester.pumpWidget(SurfTerminalApp(dependencies: dependencies));
     await tester.pumpAndSettle();
 
-    expect(find.text('Your terminal starts here'), findsOneWidget);
-    await tester.tap(find.byTooltip('Add SSH host'));
+    expect(find.byTooltip('Add host'), findsOneWidget);
+    await tester.tap(find.byTooltip('Add host'));
     await tester.pumpAndSettle();
 
-    final saveProfile = find.text('Save');
+    final connectProfile = find.widgetWithText(TextButton, 'Connect');
 
-    await tester.tap(saveProfile);
+    await tester.tap(connectProfile);
     await tester.pump();
     expect(find.text('Required'), findsNWidgets(2));
 
@@ -34,24 +32,24 @@ void main() {
     );
     await tester.enterText(find.byKey(const Key('profile-username')), 'demo');
     await tester.enterText(find.byKey(const Key('profile-port')), '70000');
-    await tester.tap(saveProfile);
+    await tester.tap(connectProfile);
     await tester.pump();
     expect(find.text('Enter a port from 1 to 65535'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('profile-port')), '22');
-    await tester.tap(saveProfile);
+    await tester.tap(connectProfile);
     await tester.pumpAndSettle();
-    expect(find.text('demo@demo.example.com:22'), findsOneWidget);
+    expect(find.text('Password required'), findsOneWidget);
+    expect(await dependencies.profilesRepository.getAll(), hasLength(1));
+    expect(dependencies.terminalRuntimes.sessions, isEmpty);
   });
 
   testWidgets('password is obscured by default and can be revealed', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      SurfTerminalApp(dependencies: emptyDependencies()),
-    );
+    await tester.pumpWidget(SurfTerminalApp(dependencies: emptyDependencies()));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add SSH host'));
+    await tester.tap(find.byTooltip('Add host'));
     await tester.pumpAndSettle();
 
     final passwordFinder = find.byKey(const Key('profile-password'));

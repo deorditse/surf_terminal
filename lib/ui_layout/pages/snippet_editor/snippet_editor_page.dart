@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:surf_terminal/business_layout/business_layout.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
+import 'package:surf_terminal/ui_layout/pages/snippet_editor/widgets/snippet_form_fields.dart';
 import 'package:surf_terminal/ui_layout/shared/widgets/surf_components.dart';
 
 class SnippetEditorPage extends StatefulWidget {
@@ -28,7 +29,7 @@ class _SnippetEditorPageState extends State<SnippetEditorPage> {
     _existing = widget.snippetId == null
         ? null
         : context
-              .read<SnippetsCubit>()
+              .read<SnippetsBloc>()
               .state
               .snippets
               .where((item) => item.id == widget.snippetId)
@@ -53,7 +54,7 @@ class _SnippetEditorPageState extends State<SnippetEditorPage> {
 
   void _save() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final cubit = context.read<SnippetsCubit>();
+    final bloc = context.read<SnippetsBloc>();
     final labels = _labels.text
         .split(',')
         .map((item) => item.trim())
@@ -66,13 +67,13 @@ class _SnippetEditorPageState extends State<SnippetEditorPage> {
           description: _description.text.trim(),
           labels: labels,
         ) ??
-        cubit.createSnippet(
+        bloc.createSnippet(
           title: _title.text.trim(),
           command: _command.text.trim(),
           description: _description.text.trim(),
           labels: labels,
         );
-    cubit.saveSnippet(snippet);
+    bloc.add(SnippetsEvent.snippetSaved(snippet));
     context.pop();
   }
 
@@ -91,53 +92,17 @@ class _SnippetEditorPageState extends State<SnippetEditorPage> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
               const PageIntro(
-                eyebrow: 'Reusable command',
-                title: 'Shape a shortcut',
-                description:
-                    'Snippets live in memory for the current preview run.',
+                eyebrow: 'Command',
+                title: 'Snippet',
+                description: 'Store a reusable command.',
               ),
               const SizedBox(height: 24),
-              SurfSection(
-                child: Column(
-                  children: [
-                    TextFormField(
-                      key: const Key('snippet-title'),
-                      controller: _title,
-                      validator: _required,
-                      decoration: const InputDecoration(labelText: 'Title'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      key: const Key('snippet-command'),
-                      controller: _command,
-                      validator: _required,
-                      minLines: 3,
-                      maxLines: 7,
-                      style: const TextStyle(fontFamily: 'monospace'),
-                      decoration: const InputDecoration(
-                        labelText: 'Command',
-                        alignLabelWithHint: true,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _description,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                        hintText: 'Optional',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _labels,
-                      decoration: const InputDecoration(
-                        labelText: 'Labels',
-                        hintText: 'ops, diagnostics',
-                      ),
-                    ),
-                  ],
-                ),
+              SnippetFormFields(
+                titleController: _title,
+                commandController: _command,
+                descriptionController: _description,
+                labelsController: _labels,
+                requiredValidator: _required,
               ),
               const SizedBox(height: 24),
               FilledButton.icon(

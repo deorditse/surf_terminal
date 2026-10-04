@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:surf_terminal/ui_layout/pages/connection_editor/connection_editor_page.dart';
 import 'package:surf_terminal/ui_layout/pages/connections/connections_page.dart';
 import 'package:surf_terminal/ui_layout/pages/settings/settings_page.dart';
-import 'package:surf_terminal/ui_layout/pages/sftp/sftp_page.dart';
 import 'package:surf_terminal/ui_layout/pages/shell/app_shell_page.dart';
 import 'package:surf_terminal/ui_layout/pages/snippet_editor/snippet_editor_page.dart';
 import 'package:surf_terminal/ui_layout/pages/snippets/snippets_page.dart';
@@ -24,14 +23,6 @@ GoRouter createAppRouter() {
               GoRoute(
                 path: '/connections',
                 builder: (context, state) => const ConnectionsPage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/sftp',
-                builder: (context, state) => const SftpPage(),
               ),
             ],
           ),

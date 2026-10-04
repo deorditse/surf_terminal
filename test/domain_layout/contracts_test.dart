@@ -3,13 +3,13 @@ import 'package:surf_terminal/domain_layout/domain_layout.dart';
 
 final class _ProfilesRepository implements ProfilesRepository {
   @override
-  List<SshProfile> getAll() => const <SshProfile>[];
+  Future<List<SshProfile>> getAll() async => const <SshProfile>[];
 
   @override
-  void save(SshProfile profile) {}
+  Future<void> save(SshProfile profile) async {}
 
   @override
-  void delete(String id) {}
+  Future<void> delete(String id) async {}
 }
 
 final class _SnippetsRepository implements SnippetsRepository {
@@ -31,42 +31,21 @@ final class _SettingsRepository implements SettingsRepository {
   void save(TerminalPreferences preferences) {}
 }
 
-final class _SftpRepository implements SftpRepository {
-  @override
-  SftpPreviewState previewState = SftpPreviewState.empty;
-
-  @override
-  String path = '/';
-
-  @override
-  List<SftpEntry> list() => const <SftpEntry>[];
-
-  @override
-  void setPreviewState(SftpPreviewState state) => previewState = state;
-
-  @override
-  void openFolder(String name) => path = '/$name';
-
-  @override
-  void goToParent() => path = '/';
-}
-
 void main() {
-  test('repository contracts expose domain-only profile operations', () {
+  test('repository contracts expose domain-only profile operations', () async {
     final repository = _ProfilesRepository();
 
-    expect(repository.getAll(), isEmpty);
-    repository
-      ..save(
-        const SshProfile(
-          id: 'profile-1',
-          name: 'Lab',
-          host: 'lab.example.com',
-          port: 22,
-          username: 'developer',
-        ),
-      )
-      ..delete('profile-1');
+    expect(await repository.getAll(), isEmpty);
+    await repository.save(
+      const SshProfile(
+        id: 'profile-1',
+        name: 'Lab',
+        host: 'lab.example.com',
+        port: 22,
+        username: 'developer',
+      ),
+    );
+    await repository.delete('profile-1');
   });
 
   test('repository contracts expose domain-only snippet operations', () {
@@ -87,19 +66,5 @@ void main() {
     repository.save(
       repository.load().copyWith(cursorStyle: TerminalCursorStyle.underline),
     );
-  });
-
-  test('SFTP contract supports preview state and navigation', () {
-    final repository = _SftpRepository();
-
-    repository
-      ..setPreviewState(SftpPreviewState.loading)
-      ..openFolder('logs');
-    expect(repository.previewState, SftpPreviewState.loading);
-    expect(repository.path, '/logs');
-    expect(repository.list(), isEmpty);
-
-    repository.goToParent();
-    expect(repository.path, '/');
   });
 }

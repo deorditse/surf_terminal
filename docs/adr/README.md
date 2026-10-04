@@ -47,5 +47,7 @@ Do not rewrite accepted history when a decision changes. Create a new ADR, link 
 | [ADR-0006](ADR-0006-openspec-approval-workflow.md) | Accepted | Transparent, approval-gated OpenSpec workflow |
 | [ADR-0007](ADR-0007-package-based-clean-architecture.md) | Superseded | Package-based Clean Architecture with explicit Flutter pages |
 | [ADR-0008](ADR-0008-sqflite-and-secure-storage.md) | Accepted | sqflite for structured data and secure storage for secrets |
-| [ADR-0009](ADR-0009-surf-terminal-presentation-system.md) | Accepted | Original adaptive presentation system with fixture-only boundaries |
+| [ADR-0009](ADR-0009-surf-terminal-presentation-system.md) | Superseded | Original adaptive presentation system with fixture-only boundaries |
 | [ADR-0010](ADR-0010-single-package-layout-clean-architecture.md) | Accepted | Single-package Clean Architecture with explicit `*_layout` boundaries |
+| [ADR-0011](ADR-0011-dark-ssh-first-surf-terminal-identity.md) | Accepted | Dark SSH-first Surf Terminal identity, native splash, and application icons |
+| [ADR-0012](ADR-0012-real-ssh-runtime-freezed-bloc.md) | Accepted | Real SSH runtime, protected credentials, host trust, and Freezed BLoC workflows |

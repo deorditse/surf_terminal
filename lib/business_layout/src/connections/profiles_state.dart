@@ -1,26 +1,32 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
+
+part 'profiles_state.freezed.dart';
 
 enum ProfilesStatus { loading, success, failure }
 
-final class ProfilesState {
-  ProfilesState({
-    this.status = ProfilesStatus.loading,
-    List<SshProfile> profiles = const <SshProfile>[],
-    this.errorMessage,
-  }) : profiles = List<SshProfile>.unmodifiable(profiles);
+@freezed
+sealed class ProfilesState with _$ProfilesState {
+  const ProfilesState._();
 
-  final ProfilesStatus status;
-  final List<SshProfile> profiles;
-  final String? errorMessage;
-
-  ProfilesState copyWith({
-    ProfilesStatus? status,
-    List<SshProfile>? profiles,
+  const factory ProfilesState.loading({
+    @Default(<SshProfile>[]) List<SshProfile> profiles,
     String? errorMessage,
-    bool clearError = false,
-  }) => ProfilesState(
-    status: status ?? this.status,
-    profiles: profiles ?? this.profiles,
-    errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
-  );
+  }) = ProfilesLoading;
+
+  const factory ProfilesState.success({
+    required List<SshProfile> profiles,
+    String? errorMessage,
+  }) = ProfilesSuccess;
+
+  const factory ProfilesState.failure({
+    required List<SshProfile> profiles,
+    required String errorMessage,
+  }) = ProfilesFailure;
+
+  ProfilesStatus get status => switch (this) {
+    ProfilesLoading() => ProfilesStatus.loading,
+    ProfilesSuccess() => ProfilesStatus.success,
+    ProfilesFailure() => ProfilesStatus.failure,
+  };
 }

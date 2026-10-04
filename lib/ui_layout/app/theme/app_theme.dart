@@ -27,52 +27,43 @@ abstract final class SurfRadii {
 }
 
 abstract final class SurfTheme {
-  static ThemeData dark() => _theme(Brightness.dark);
-
-  static ThemeData light() => _theme(Brightness.light);
-
-  static ThemeData _theme(Brightness brightness) {
-    final dark = brightness == Brightness.dark;
+  static ThemeData dark() {
     final scheme =
         ColorScheme.fromSeed(
           seedColor: SurfColors.surf,
-          brightness: brightness,
-          surface: dark ? SurfColors.deep : const Color(0xFFF4F8FA),
+          brightness: Brightness.dark,
+          surface: SurfColors.deep,
         ).copyWith(
-          primary: dark ? SurfColors.surf : const Color(0xFF006B91),
-          secondary: dark ? SurfColors.tide : const Color(0xFF006B60),
-          error: dark ? SurfColors.coral : const Color(0xFFBA1A1A),
-          onSurface: dark ? SurfColors.foam : SurfColors.ink,
+          primary: SurfColors.surf,
+          secondary: SurfColors.tide,
+          error: SurfColors.coral,
+          onSurface: SurfColors.foam,
         );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: brightness,
+      brightness: Brightness.dark,
       colorScheme: scheme,
-      scaffoldBackgroundColor: dark ? SurfColors.ink : const Color(0xFFF7FAFC),
+      scaffoldBackgroundColor: SurfColors.ink,
       cardTheme: CardThemeData(
-        color: dark ? SurfColors.deep : Colors.white,
+        color: SurfColors.deep,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SurfRadii.md),
-          side: BorderSide(
-            color: dark ? SurfColors.raised : const Color(0xFFD9E4EA),
-          ),
+          side: const BorderSide(color: SurfColors.raised),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: dark ? SurfColors.deep : Colors.white,
+        fillColor: SurfColors.deep,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SurfRadii.sm),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SurfRadii.sm),
-          borderSide: BorderSide(
-            color: dark ? SurfColors.raised : const Color(0xFFD9E4EA),
-          ),
+          borderSide: const BorderSide(color: SurfColors.raised),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -81,7 +72,7 @@ abstract final class SurfTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
-        backgroundColor: dark ? SurfColors.deep : Colors.white,
+        backgroundColor: SurfColors.deep,
         indicatorColor: scheme.primary.withValues(alpha: 0.18),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
@@ -92,7 +83,7 @@ abstract final class SurfTheme {
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: dark ? SurfColors.deep : Colors.white,
+        backgroundColor: SurfColors.deep,
         indicatorColor: scheme.primary.withValues(alpha: 0.18),
       ),
       appBarTheme: AppBarTheme(

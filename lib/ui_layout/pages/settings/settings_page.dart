@@ -12,40 +12,44 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
+    return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
         final preferences = state.preferences;
-        final cubit = context.read<SettingsCubit>();
+        final bloc = context.read<SettingsBloc>();
 
         return Scaffold(
           key: const Key('settings-page'),
           appBar: AppBar(title: const Text('Settings')),
-          body: SafeArea(
-            top: false,
-            child: ListView(
-              key: const PageStorageKey('settings-scroll'),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              children: [
-                const PageIntro(
-                  eyebrow: 'Personalize',
-                  title: 'Make it yours',
-                  description: 'Tune the offline terminal preview and connection behavior controls.',
-                ),
-                const SizedBox(height: 24),
-                const HelpSettingsSection(),
-                const SizedBox(height: 20),
-                TerminalSettingsSection(
-                  preferences: preferences,
-                  onChanged: cubit.updatePreferences,
-                ),
-                const SizedBox(height: 20),
-                ConnectionSettingsSection(
-                  preferences: preferences,
-                  onChanged: cubit.updatePreferences,
-                ),
-                const SizedBox(height: 20),
-                const AboutSettingsSection(),
-              ],
+          body: ManagementSurface(
+            child: SafeArea(
+              top: false,
+              child: ListView(
+                key: const PageStorageKey('settings-scroll'),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  const PageIntro(
+                    eyebrow: 'Preferences',
+                    title: 'Settings',
+                    description: 'Terminal appearance and connection behavior.',
+                  ),
+                  const SizedBox(height: 20),
+                  const HelpSettingsSection(),
+                  const SizedBox(height: 20),
+                  TerminalSettingsSection(
+                    preferences: preferences,
+                    onChanged: (value) =>
+                        bloc.add(SettingsEvent.preferencesChanged(value)),
+                  ),
+                  const SizedBox(height: 20),
+                  ConnectionSettingsSection(
+                    preferences: preferences,
+                    onChanged: (value) =>
+                        bloc.add(SettingsEvent.preferencesChanged(value)),
+                  ),
+                  const SizedBox(height: 20),
+                  const AboutSettingsSection(),
+                ],
+              ),
             ),
           ),
         );

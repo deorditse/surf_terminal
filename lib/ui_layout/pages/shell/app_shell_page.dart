@@ -13,11 +13,6 @@ class AppShellPage extends StatelessWidget {
       label: 'SSH',
     ),
     NavigationDestination(
-      icon: Icon(Icons.folder_outlined),
-      selectedIcon: Icon(Icons.folder),
-      label: 'SFTP',
-    ),
-    NavigationDestination(
       icon: Icon(Icons.code_outlined),
       selectedIcon: Icon(Icons.code),
       label: 'Snippets',

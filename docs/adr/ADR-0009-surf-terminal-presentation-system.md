@@ -1,7 +1,9 @@
 # ADR-0009: Surf Terminal presentation system
 
-Status: Accepted
+Status: Superseded
 Date: 2026-09-26
+
+Superseded by: [ADR-0011](ADR-0011-dark-ssh-first-surf-terminal-identity.md)
 
 ## Context
 

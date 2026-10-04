@@ -6,7 +6,6 @@ import 'package:surf_terminal/ui_layout/app/theme/app_theme.dart';
 void main() {
   test('theme contrast-critical pairs exceed 4.5:1', () {
     final dark = SurfTheme.dark().colorScheme;
-    final light = SurfTheme.light().colorScheme;
 
     double contrast(Color a, Color b) {
       final lighter = a.computeLuminance() > b.computeLuminance() ? a : b;
@@ -16,7 +15,6 @@ void main() {
     }
 
     expect(contrast(dark.onSurface, dark.surface), greaterThanOrEqualTo(4.5));
-    expect(contrast(light.onSurface, light.surface), greaterThanOrEqualTo(4.5));
   });
 
   testWidgets('settings controls update visible terminal preview', (

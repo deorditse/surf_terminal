@@ -7,7 +7,6 @@ void main() {
     test('loads the preview defaults', () {
       final preferences = InMemorySettingsRepository().load();
 
-      expect(preferences.autoTheme, isTrue);
       expect(preferences.palette, TerminalPalette.midnight);
       expect(preferences.fontSize, 14);
       expect(preferences.cursorStyle, TerminalCursorStyle.bar);
@@ -21,7 +20,6 @@ void main() {
     test('saves and loads every setting', () {
       final repository = InMemorySettingsRepository();
       const preferences = TerminalPreferences(
-        autoTheme: false,
         palette: TerminalPalette.tide,
         fontSize: 18,
         cursorStyle: TerminalCursorStyle.underline,
@@ -35,7 +33,6 @@ void main() {
       repository.save(preferences);
 
       final loaded = repository.load();
-      expect(loaded.autoTheme, preferences.autoTheme);
       expect(loaded.palette, preferences.palette);
       expect(loaded.fontSize, preferences.fontSize);
       expect(loaded.cursorStyle, preferences.cursorStyle);

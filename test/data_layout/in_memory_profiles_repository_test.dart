@@ -4,52 +4,66 @@ import 'package:surf_terminal/domain_layout/domain_layout.dart';
 
 void main() {
   group('InMemoryProfilesRepository', () {
-    test('starts with fictional preview profiles', () {
-      final repository = InMemoryProfilesRepository();
+    test(
+      'starts empty until a profile is explicitly supplied or saved',
+      () async {
+        final repository = InMemoryProfilesRepository();
 
-      final profiles = repository.getAll();
+        expect(await repository.getAll(), isEmpty);
+      },
+    );
 
-      expect(profiles.map((profile) => profile.name), <String>[
-        'Atlas Lab',
-        'Edge Sandbox',
-      ]);
-      expect(profiles[0].endpoint, 'developer@atlas.example.com:22');
-      expect(profiles[1].endpoint, 'operator@192.0.2.24:2222');
+    test('returns a collection copy', () async {
+      final repository = InMemoryProfilesRepository(
+        initialProfiles: const [
+          SshProfile(
+            id: 'profile-copy-test',
+            name: 'Copy test',
+            host: 'copy.invalid',
+            port: 22,
+            username: 'tester',
+          ),
+        ],
+      );
+
+      (await repository.getAll()).clear();
+
+      expect(await repository.getAll(), hasLength(1));
     });
 
-    test('returns a collection copy', () {
+    test('saves a profile and updates the matching id in place', () async {
       final repository = InMemoryProfilesRepository();
-
-      repository.getAll().clear();
-
-      expect(repository.getAll(), hasLength(2));
-    });
-
-    test('saves a profile and updates the matching id in place', () {
-      final repository = InMemoryProfilesRepository(initialProfiles: const []);
       const profile = SshProfile(
         id: 'profile-local',
         name: 'Local fixture',
-        host: 'host.example',
+        host: 'host.invalid',
         port: 22,
-        username: 'demo',
+        username: 'tester',
       );
 
-      repository.save(profile);
-      repository.save(profile.copyWith(name: 'Updated fixture'));
+      await repository.save(profile);
+      await repository.save(profile.copyWith(name: 'Updated fixture'));
 
-      expect(repository.getAll(), hasLength(1));
-      expect(repository.getAll().single.name, 'Updated fixture');
+      expect(await repository.getAll(), hasLength(1));
+      expect((await repository.getAll()).single.name, 'Updated fixture');
     });
 
-    test('deletes profiles through the final empty state', () {
-      final repository = InMemoryProfilesRepository();
+    test('deletes profiles through the final empty state', () async {
+      final repository = InMemoryProfilesRepository(
+        initialProfiles: const [
+          SshProfile(
+            id: 'profile-delete-test',
+            name: 'Delete test',
+            host: 'delete.invalid',
+            port: 22,
+            username: 'tester',
+          ),
+        ],
+      );
 
-      for (final profile in repository.getAll()) {
-        repository.delete(profile.id);
-      }
+      await repository.delete('profile-delete-test');
 
-      expect(repository.getAll(), isEmpty);
+      expect(await repository.getAll(), isEmpty);
     });
   });
 }

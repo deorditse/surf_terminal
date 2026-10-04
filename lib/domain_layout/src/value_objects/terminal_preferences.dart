@@ -4,7 +4,6 @@ enum TerminalCursorStyle { block, underline, bar }
 
 final class TerminalPreferences {
   const TerminalPreferences({
-    this.autoTheme = true,
     this.palette = TerminalPalette.midnight,
     this.fontSize = 14,
     this.cursorStyle = TerminalCursorStyle.bar,
@@ -15,7 +14,6 @@ final class TerminalPreferences {
     this.keepAwake = false,
   });
 
-  final bool autoTheme;
   final TerminalPalette palette;
   final double fontSize;
   final TerminalCursorStyle cursorStyle;
@@ -26,7 +24,6 @@ final class TerminalPreferences {
   final bool keepAwake;
 
   TerminalPreferences copyWith({
-    bool? autoTheme,
     TerminalPalette? palette,
     double? fontSize,
     TerminalCursorStyle? cursorStyle,
@@ -36,7 +33,6 @@ final class TerminalPreferences {
     int? keepaliveCount,
     bool? keepAwake,
   }) => TerminalPreferences(
-    autoTheme: autoTheme ?? this.autoTheme,
     palette: palette ?? this.palette,
     fontSize: fontSize ?? this.fontSize,
     cursorStyle: cursorStyle ?? this.cursorStyle,

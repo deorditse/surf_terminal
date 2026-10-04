@@ -1,13 +1,21 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
 
-final class TerminalSessionsState {
-  TerminalSessionsState({
-    List<PreviewSession> sessions = const <PreviewSession>[],
-    this.activeSessionId,
-  }) : sessions = List<PreviewSession>.unmodifiable(sessions);
+part 'terminal_sessions_state.freezed.dart';
 
-  final List<PreviewSession> sessions;
-  final String? activeSessionId;
+@freezed
+sealed class TerminalSessionsState with _$TerminalSessionsState {
+  const TerminalSessionsState._();
+
+  const factory TerminalSessionsState.initial({
+    @Default(<PreviewSession>[]) List<PreviewSession> sessions,
+    String? activeSessionId,
+  }) = TerminalSessionsInitial;
+
+  const factory TerminalSessionsState.ready({
+    required List<PreviewSession> sessions,
+    String? activeSessionId,
+  }) = TerminalSessionsReady;
 
   PreviewSession? get activeSession {
     for (final session in sessions) {

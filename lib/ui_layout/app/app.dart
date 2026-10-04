@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -15,59 +17,67 @@ class SurfTerminalApp extends StatefulWidget {
   State<SurfTerminalApp> createState() => _SurfTerminalAppState();
 }
 
-class _SurfTerminalAppState extends State<SurfTerminalApp> {
+class _SurfTerminalAppState extends State<SurfTerminalApp>
+    with WidgetsBindingObserver {
   late final AppDependencies _dependencies =
       widget.dependencies ?? AppDependencies.preview();
-  late final ProfilesCubit _profilesCubit = ProfilesCubit(
+  late final ProfilesBloc _profilesBloc = ProfilesBloc(
     _dependencies.profilesRepository,
   );
-  late final SnippetsCubit _snippetsCubit = SnippetsCubit(
+  late final SnippetsBloc _snippetsBloc = SnippetsBloc(
     _dependencies.snippetsRepository,
   );
-  late final TerminalSessionsCubit _terminalSessionsCubit =
-      TerminalSessionsCubit();
-  late final SftpCubit _sftpCubit = SftpCubit(_dependencies.sftpRepository);
-  late final SettingsCubit _settingsCubit = SettingsCubit(
+  late final TerminalSessionsBloc _terminalSessionsBloc =
+      TerminalSessionsBloc();
+  late final SettingsBloc _settingsBloc = SettingsBloc(
     _dependencies.settingsRepository,
   );
   late final GoRouter _router = createAppRouter();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_dependencies.terminalRuntimes.disconnectAll());
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _router.dispose();
-    _profilesCubit.close();
-    _snippetsCubit.close();
-    _terminalSessionsCubit.close();
-    _sftpCubit.close();
-    _settingsCubit.close();
+    _profilesBloc.close();
+    _snippetsBloc.close();
+    _terminalSessionsBloc.close();
+    _settingsBloc.close();
+    unawaited(_dependencies.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _profilesCubit),
-        BlocProvider.value(value: _snippetsCubit),
-        BlocProvider.value(value: _terminalSessionsCubit),
-        BlocProvider.value(value: _sftpCubit),
-        BlocProvider.value(value: _settingsCubit),
-      ],
-      child: BlocBuilder<SettingsCubit, SettingsState>(
-        buildWhen: (previous, current) =>
-            previous.preferences.autoTheme != current.preferences.autoTheme,
-        builder: (context, state) {
-          return MaterialApp.router(
-            title: 'Surf Terminal',
-            debugShowCheckedModeBanner: false,
-            theme: SurfTheme.light(),
-            darkTheme: SurfTheme.dark(),
-            themeMode: state.preferences.autoTheme
-                ? ThemeMode.system
-                : ThemeMode.dark,
-            routerConfig: _router,
-          );
-        },
+    return RepositoryProvider.value(
+      value: _dependencies,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: _profilesBloc),
+          BlocProvider.value(value: _snippetsBloc),
+          BlocProvider.value(value: _terminalSessionsBloc),
+          BlocProvider.value(value: _settingsBloc),
+        ],
+        child: MaterialApp.router(
+          title: 'Surf Terminal',
+          debugShowCheckedModeBanner: false,
+          theme: SurfTheme.dark(),
+          themeMode: ThemeMode.dark,
+          routerConfig: _router,
+        ),
       ),
     );
   }

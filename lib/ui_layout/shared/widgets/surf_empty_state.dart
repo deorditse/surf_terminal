@@ -6,16 +6,16 @@ class SurfEmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.description,
-    required this.actionLabel,
-    required this.onAction,
+    this.actionLabel,
+    this.onAction,
     super.key,
   });
 
   final IconData icon;
   final String title;
   final String description;
-  final String actionLabel;
-  final VoidCallback onAction;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +30,8 @@ class SurfEmptyState extends StatelessWidget {
               children: [
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.14),
+                    color: Theme.of(context).colorScheme.primary
+                        .withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Padding(
@@ -48,25 +47,24 @@ class SurfEmptyState extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   description,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: SurfColors.muted,
-                    height: 1.45,
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: SurfColors.muted, height: 1.45),
+                ),
+                if (actionLabel case final label? when onAction != null) ...[
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: onAction,
+                    icon: const Icon(Icons.add),
+                    label: Text(label),
                   ),
-                ),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: onAction,
-                  icon: const Icon(Icons.add),
-                  label: Text(actionLabel),
-                ),
+                ],
               ],
             ),
           ),

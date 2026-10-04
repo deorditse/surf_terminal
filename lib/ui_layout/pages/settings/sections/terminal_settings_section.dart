@@ -21,13 +21,11 @@ class TerminalSettingsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SwitchListTile.adaptive(
+          const ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Auto app theme'),
-            subtitle: const Text('Follow the system light or dark appearance'),
-            value: preferences.autoTheme,
-            onChanged: (value) =>
-                onChanged(preferences.copyWith(autoTheme: value)),
+            leading: Icon(Icons.dark_mode_outlined),
+            title: Text('Dark interface'),
+            subtitle: Text('Surf Terminal always uses its dark ocean theme.'),
           ),
           const Divider(),
           const ListTile(

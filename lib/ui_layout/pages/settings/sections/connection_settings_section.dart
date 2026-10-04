@@ -24,7 +24,7 @@ class ConnectionSettingsSection extends StatelessWidget {
             leading: const Icon(Icons.monitor_outlined),
             title: const Text('Emulation type'),
             subtitle: const Text(
-              'Terminal capability advertised to future sessions',
+              'TERM value for new sessions',
             ),
             trailing: DropdownButton<String>(
               value: preferences.emulation,
@@ -49,7 +49,7 @@ class ConnectionSettingsSection extends StatelessWidget {
           const Divider(),
           ChoiceRow(
             title: 'Keepalive interval',
-            subtitle: 'Presentation value; no packets are sent',
+            subtitle: 'Seconds between keepalive checks',
             value: '${preferences.keepaliveSeconds}s',
             values: const [15, 30, 60, 120],
             onSelected: (value) =>
@@ -58,7 +58,7 @@ class ConnectionSettingsSection extends StatelessWidget {
           const Divider(),
           ChoiceRow(
             title: 'Keepalive count',
-            subtitle: 'Bounded retry count for a future transport',
+            subtitle: 'Checks allowed before disconnecting',
             value: '${preferences.keepaliveCount}',
             values: const [1, 3, 5, 8],
             onSelected: (value) =>
@@ -68,7 +68,7 @@ class ConnectionSettingsSection extends StatelessWidget {
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: const Text('Keep awake'),
-            subtitle: const Text('Preview only; device policy is unchanged'),
+            subtitle: const Text('Stored for the current app run'),
             value: preferences.keepAwake,
             onChanged: (value) =>
                 onChanged(preferences.copyWith(keepAwake: value)),

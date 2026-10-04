@@ -11,14 +11,12 @@ class PreviewBadge extends StatelessWidget {
       label: 'Non-networked local preview',
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.secondary.withValues(alpha: 0.14),
+          color: Theme.of(context).colorScheme.secondary
+              .withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(99),
           border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.secondary.withValues(alpha: 0.35),
+            color: Theme.of(context).colorScheme.secondary
+                .withValues(alpha: 0.35),
           ),
         ),
         child: Padding(

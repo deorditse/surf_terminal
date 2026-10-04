@@ -1,7 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:surf_terminal/ui_layout/app/app.dart';
 
-void main() {
+import 'package:surf_terminal/ui_layout/app/di/app_dependencies.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const SurfTerminalApp());
+  final dependencies = await AppDependencies.production();
+  runApp(SurfTerminalApp(dependencies: dependencies));
 }

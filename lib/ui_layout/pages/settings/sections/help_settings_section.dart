@@ -14,9 +14,7 @@ class HelpSettingsSection extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.help_outline),
             title: Text('Quick start'),
-            subtitle: Text(
-              'Create a host and open its offline terminal preview',
-            ),
+            subtitle: Text('Create a host and open its terminal'),
             trailing: Icon(Icons.chevron_right),
           ),
           const Divider(),

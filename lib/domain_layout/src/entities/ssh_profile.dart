@@ -1,3 +1,5 @@
+import '../value_objects/credential.dart';
+
 final class SshProfile {
   const SshProfile({
     required this.id,
@@ -10,6 +12,9 @@ final class SshProfile {
     this.sendUtf8Locale = true,
     this.jumpHostEnabled = false,
     this.proxyEnabled = false,
+    this.credentialReference,
+    this.createdAt,
+    this.updatedAt,
   });
 
   final String id;
@@ -22,6 +27,9 @@ final class SshProfile {
   final bool sendUtf8Locale;
   final bool jumpHostEnabled;
   final bool proxyEnabled;
+  final CredentialReference? credentialReference;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   String get endpoint => '$username@$host:$port';
 
@@ -35,6 +43,9 @@ final class SshProfile {
     bool? sendUtf8Locale,
     bool? jumpHostEnabled,
     bool? proxyEnabled,
+    CredentialReference? credentialReference,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) => SshProfile(
     id: id,
     name: name ?? this.name,
@@ -46,5 +57,8 @@ final class SshProfile {
     sendUtf8Locale: sendUtf8Locale ?? this.sendUtf8Locale,
     jumpHostEnabled: jumpHostEnabled ?? this.jumpHostEnabled,
     proxyEnabled: proxyEnabled ?? this.proxyEnabled,
+    credentialReference: credentialReference ?? this.credentialReference,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
   );
 }

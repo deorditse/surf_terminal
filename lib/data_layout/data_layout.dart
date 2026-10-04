@@ -1,4 +1,14 @@
+export 'src/credentials/credential_reference_generator.dart';
+export 'src/credentials/flutter_secure_credential_store.dart';
+export 'src/database/ssh_database.dart';
 export 'src/repositories/in_memory_profiles_repository.dart';
 export 'src/repositories/in_memory_settings_repository.dart';
-export 'src/repositories/in_memory_sftp_repository.dart';
 export 'src/repositories/in_memory_snippets_repository.dart';
+export 'src/repositories/sqlite_known_hosts_repository.dart';
+export 'src/repositories/sqlite_profiles_repository.dart';
+export 'src/ssh/dartssh_backend.dart';
+export 'src/ssh/dartssh2_backend.dart';
+export 'src/ssh/dartssh_session.dart';
+export 'src/ssh/dartssh_session_factory.dart';
+export 'src/ssh/ssh_exception_mapper.dart';
+export 'src/ssh/tailscale_userauth_banner_parser.dart';
