@@ -25,7 +25,12 @@ class SnippetsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       key: const PageStorageKey('snippets-scroll'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        managementScrollTopPadding(context),
+        16,
+        24,
+      ),
       children: [
         const PageIntro(
           eyebrow: 'Commands',

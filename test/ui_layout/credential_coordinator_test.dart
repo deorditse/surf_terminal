@@ -130,6 +130,26 @@ void main() {
     expect(profiles.saved!.credentialReference, isNull);
     expect(queued, <CredentialReference>[reference]);
   });
+
+  test('failed transient deletion is queued for retry', () async {
+    final calls = <String>[];
+    final queued = <CredentialReference>[];
+    final coordinator = CredentialCoordinator(
+      profiles: _Profiles(calls),
+      credentials: _Credentials(calls)..failDelete = true,
+      references: CredentialReferenceGenerator(),
+      scheduleCleanup: (reference) async {
+        calls.add('cleanup-queued');
+        queued.add(reference);
+      },
+    );
+    const reference = CredentialReference('opaque-transient');
+
+    await coordinator.cleanupTransient(reference);
+
+    expect(calls, <String>['credential-delete', 'cleanup-queued']);
+    expect(queued, <CredentialReference>[reference]);
+  });
 }
 
 SshProfile _profile(CredentialReference reference) => SshProfile(

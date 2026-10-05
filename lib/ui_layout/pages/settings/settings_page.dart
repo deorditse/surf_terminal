@@ -19,13 +19,19 @@ class SettingsPage extends StatelessWidget {
 
         return Scaffold(
           key: const Key('settings-page'),
-          appBar: AppBar(title: const Text('Settings')),
+          extendBodyBehindAppBar: true,
+          appBar: ManagementAppBar(title: const Text('Settings')),
           body: ManagementSurface(
             child: SafeArea(
               top: false,
               child: ListView(
                 key: const PageStorageKey('settings-scroll'),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  managementScrollTopPadding(context),
+                  16,
+                  32,
+                ),
                 children: [
                   const PageIntro(
                     eyebrow: 'Preferences',

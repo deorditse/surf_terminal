@@ -81,7 +81,8 @@ class _SnippetEditorPageState extends State<SnippetEditorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const Key('snippet-editor-page'),
-      appBar: AppBar(
+      extendBodyBehindAppBar: true,
+      appBar: ManagementAppBar(
         title: Text(_existing == null ? 'New snippet' : 'Edit snippet'),
       ),
       body: SafeArea(
@@ -89,7 +90,13 @@ class _SnippetEditorPageState extends State<SnippetEditorPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            key: const PageStorageKey('snippet-editor-scroll'),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              managementScrollTopPadding(context),
+              16,
+              32,
+            ),
             children: [
               const PageIntro(
                 eyebrow: 'Command',

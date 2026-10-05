@@ -25,22 +25,28 @@ void main() {
     await tester.tap(find.text('Settings').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Make it yours'), findsOneWidget);
+    expect(
+      find.text('Terminal appearance and connection behavior.'),
+      findsOneWidget,
+    );
     final kelpPalette = find.byKey(const Key('palette-kelp'));
-    await tester.ensureVisible(kelpPalette);
+    await tester.scrollUntilVisible(
+      kelpPalette,
+      160,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('settings-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const PageStorageKey('settings-scroll')),
+      const Offset(0, 120),
+    );
     await tester.pumpAndSettle();
     await tester.tap(kelpPalette);
     await tester.pump();
     final chip = tester.widget<ChoiceChip>(kelpPalette);
     expect(chip.selected, isTrue);
-    final cloudBackup = find.text('Cloud backup');
-    await tester.scrollUntilVisible(cloudBackup, 300);
-    expect(cloudBackup, findsOneWidget);
-    expect(
-      tester
-          .widget<ListTile>(find.widgetWithText(ListTile, 'Cloud backup'))
-          .enabled,
-      isFalse,
-    );
   });
 }

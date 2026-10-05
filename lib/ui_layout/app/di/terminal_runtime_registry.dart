@@ -13,11 +13,11 @@ final class TerminalSessionRuntime {
     required this.bloc,
     required this.terminal,
     required this.focusNode,
-    required SecureCredentialStore credentials,
+    required Future<void> Function(CredentialReference) cleanupTransient,
     CredentialReference? transientReference,
   }) : // Public dependency names intentionally differ from private fields.
        // ignore: prefer_initializing_formals
-       _credentials = credentials,
+       _cleanupTransient = cleanupTransient,
        // ignore: prefer_initializing_formals
        _transientReference = transientReference;
 
@@ -26,7 +26,7 @@ final class TerminalSessionRuntime {
   final SshSessionBloc bloc;
   final xterm.Terminal terminal;
   final FocusNode focusNode;
-  final SecureCredentialStore _credentials;
+  final Future<void> Function(CredentialReference) _cleanupTransient;
   final CredentialReference? _transientReference;
   StreamSubscription<String>? _outputSubscription;
   bool _closed = false;
@@ -44,11 +44,7 @@ final class TerminalSessionRuntime {
     focusNode.dispose();
     final reference = _transientReference;
     if (reference != null) {
-      try {
-        await _credentials.delete(reference);
-      } on Object {
-        // The opaque entry is unreachable and must not block session cleanup.
-      }
+      await _cleanupTransient(reference);
     }
   }
 }
@@ -58,17 +54,19 @@ final class TerminalRuntimeRegistry {
     required SshSessionFactory factory,
     required KnownHostsRepository knownHosts,
     required SecureCredentialStore credentials,
+    Future<void> Function(CredentialReference)? cleanupTransient,
   }) : // Public dependency names intentionally differ from private fields.
        // ignore: prefer_initializing_formals
        _factory = factory,
        // ignore: prefer_initializing_formals
        _knownHosts = knownHosts,
-       // ignore: prefer_initializing_formals
-       _credentials = credentials;
+       _cleanupTransient =
+           cleanupTransient ??
+           ((reference) => _bestEffortDelete(credentials, reference));
 
   final SshSessionFactory _factory;
   final KnownHostsRepository _knownHosts;
-  final SecureCredentialStore _credentials;
+  final Future<void> Function(CredentialReference) _cleanupTransient;
   final Map<String, TerminalSessionRuntime> _sessions = {};
   Future<void> _operations = Future<void>.value();
   int _nextId = 0;
@@ -112,7 +110,7 @@ final class TerminalRuntimeRegistry {
       bloc: bloc,
       terminal: terminal,
       focusNode: focusNode,
-      credentials: _credentials,
+      cleanupTransient: _cleanupTransient,
       transientReference: transientReference,
     );
     terminal.onOutput = (data) =>
@@ -160,5 +158,16 @@ final class TerminalRuntimeRegistry {
     for (final runtime in runtimes) {
       await runtime.close();
     }
+  }
+}
+
+Future<void> _bestEffortDelete(
+  SecureCredentialStore credentials,
+  CredentialReference reference,
+) async {
+  try {
+    await credentials.delete(reference);
+  } on Object {
+    // Preview/test stores without a cleanup scheduler remain best effort.
   }
 }

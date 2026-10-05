@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Terminal workspace prioritizes one full-screen active session
-Terminal workspace SHALL display exactly one active real SSH session without a server tab strip or persistent session status row. Starting another connection MUST close and release the previous runtime before presenting the replacement. A connected session SHALL expand its terminal viewport to all body space not required by navigation/safe areas and the mobile special-key toolbar. The terminal surface SHALL use a standard flat black/dark-charcoal presentation with monospace xterm content and MUST NOT include surfer management decoration such as waves, gradients, cards, preview badges or promotional copy.
+Terminal workspace SHALL display exactly one active real SSH session without a server tab strip, ordinary AppBar, persistent session status row or opaque toolbar band. Starting another connection MUST close and release the previous runtime before presenting the replacement. The terminal canvas SHALL fill the display edge-to-edge behind system insets and SHALL remain visually and behaviorally close to standard macOS Terminal: flat opaque black/dark-charcoal, familiar monospace metrics and restrained ANSI-compatible colors. Terminal content and interactive controls MUST respect safe areas and software-keyboard insets. Setup/failure/dialog presentation SHALL be Cupertino-first. Compact navigation, copy and mobile special-key controls SHALL float above the canvas as clipped Liquid Glass overlays with built-in frosted and solid accessibility fallbacks. Glass MUST NOT blur or refract the full terminal glyph grid and the route MUST NOT include infrastructure motifs, waves, gradients, cards, preview badges or promotional copy.
 
 #### Scenario: Открывается profile
 - **WHEN** пользователь выбирает сохранённый profile либо отправляет новый profile через `Connect`
@@ -15,11 +15,23 @@ Terminal workspace SHALL display exactly one active real SSH session without a s
 
 #### Scenario: Session подключена
 - **WHEN** host-key verification, authentication и PTY/shell creation завершены
-- **THEN** server tabs и persistent status row отсутствуют, а стандартный undecorated dark terminal viewport занимает всю оставшуюся доступную высоту над mobile toolbar
+- **THEN** AppBar, server tabs, persistent status row и opaque toolbar band отсутствуют, а opaque dark terminal canvas заполняет экран edge-to-edge под плавающими controls
+
+#### Scenario: Controls учитывают safe area
+- **WHEN** terminal отображается на устройстве с вырезом, home indicator либо открытой software keyboard
+- **THEN** canvas остаётся edge-to-edge, terminal glyphs/input cursor не перекрываются системными областями, а floating controls перемещаются внутри доступной safe/IME области без резервирования постоянной полосы
+
+#### Scenario: Terminal controls используют Liquid Glass
+- **WHEN** отображаются back/session, copy или special-key actions
+- **THEN** они представлены компактными floating glass pills, blur/refraction clipped их bounds, а остальной terminal glyph grid остаётся opaque и не фильтруется
+
+#### Scenario: Glass effect недоступен или отключён
+- **WHEN** включён reduced transparency/high contrast, glass shader недоступен либо выбран performance fallback
+- **THEN** controls сохраняют layout, semantics и touch targets с built-in clipped frosted либо solid high-contrast surface без full-screen blur
 
 #### Scenario: Session устанавливает соединение
 - **WHEN** session находится в connecting, verifying-host-key, authenticating или reconnecting state
-- **THEN** в центре доступной terminal body отображаются `CircularProgressIndicator` и фактический lifecycle label
+- **THEN** в центре доступной terminal body отображаются `CupertinoActivityIndicator` и фактический lifecycle label
 
 #### Scenario: Session завершается ошибкой
 - **WHEN** connection lifecycle переходит в failed state
@@ -27,7 +39,30 @@ Terminal workspace SHALL display exactly one active real SSH session without a s
 
 #### Scenario: Terminal presentation проверяется
 - **WHEN** terminal route отображает setup, connected или failure state
-- **THEN** его background остаётся flat dark, terminal text остаётся monospace, а surfer waves, gradients, cards, preview badges и management marketing copy отсутствуют
+- **THEN** canvas остаётся flat opaque dark и edge-to-edge, terminal text остаётся familiar monospace, а glass ограничен floating controls; server motifs, waves, gradients, cards, preview badges и management marketing copy отсутствуют
+
+#### Scenario: Remote command пишет ошибку
+- **WHEN** открытый PTY/shell получает remote stdout и stderr, включая error text и ANSI/control sequences
+- **THEN** payload отображается в xterm дословно и в transport delivery order без локализации, application cards, изменения wording либо переноса в lifecycle surface
+
+#### Scenario: Локальный SSH lifecycle завершается ошибкой
+- **WHEN** DNS, transport, host-key, authentication либо PTY/shell setup завершается ошибкой до или вне remote command output
+- **THEN** terminal route отображает безопасное нормализованное сообщение в terminal-style failure surface с retry/return controls и не записывает эту ошибку в xterm buffer
+
+#### Scenario: Чувствительная authentication data не становится output
+- **WHEN** authentication обрабатывает password prompt, password response, raw banner либо одноразовый external-auth URL
+- **THEN** эти данные отсутствуют и в remote xterm buffer, и в отображаемом lifecycle error detail
+
+### Requirement: Terminal output supports local mobile selection and copy
+Connected terminal output SHALL support long-press selection with draggable handles, platform context-menu `Copy`, and a `Copy selection` action in the floating special-key controls. Copying SHALL operate only on the current non-empty selection, MUST NOT send terminal input to the remote session, and MUST NOT persist a transcript.
+
+#### Scenario: Пользователь копирует выделение
+- **WHEN** пользователь long-press/drag выделяет terminal output и выбирает system `Copy` либо `Copy selection` в toolbar
+- **THEN** selected plain text помещается в system clipboard, никакие bytes не отправляются в SSH session и selection остаётся локальной UI state
+
+#### Scenario: Выделение отсутствует
+- **WHEN** terminal selection пустая
+- **THEN** `Copy selection` disabled либо безопасно ничего не делает и clipboard не перезаписывается
 
 ## MODIFIED Requirements
 

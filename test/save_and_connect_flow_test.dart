@@ -1,22 +1,31 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:surf_terminal/business_layout/business_layout.dart';
 import 'package:surf_terminal/data_layout/data_layout.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
 import 'package:surf_terminal/ui_layout/app/app.dart';
 import 'package:surf_terminal/ui_layout/app/di/app_dependencies.dart';
+import 'package:surf_terminal/ui_layout/app/di/terminal_runtime_registry.dart';
+import 'package:surf_terminal/ui_layout/pages/connections/profile_connector.dart';
 
 import 'support/save_connect_fakes.dart';
 
 void main() {
-  testWidgets('terminal is visible while profile save is pending', (tester) async {
+  testWidgets('terminal is visible while profile save is pending', (
+    tester,
+  ) async {
     final gate = Completer<void>();
     final profiles = TrackingProfilesRepository(saveGate: gate);
     final dependencies = _dependencies(profiles: profiles);
     await _openEditor(tester, dependencies);
 
     await _submit(tester, remember: false);
+    expect(find.byKey(const Key('terminal-page')), findsOneWidget);
+    expect(dependencies.terminalRuntimes.sessions, hasLength(1));
+    expect(profiles.saveCount, 1);
     await profiles.saveStarted.future;
     await tester.pump();
 
@@ -27,7 +36,9 @@ void main() {
     await _disposeApp(tester, dependencies);
   });
 
-  testWidgets('SSH failure does not suppress pending profile save', (tester) async {
+  testWidgets('SSH failure does not suppress pending profile save', (
+    tester,
+  ) async {
     final gate = Completer<void>();
     final profiles = TrackingProfilesRepository(saveGate: gate);
     final dependencies = _dependencies(profiles: profiles);
@@ -45,7 +56,9 @@ void main() {
     await _disposeApp(tester, dependencies);
   });
 
-  testWidgets('profile save failure leaves started runtime open', (tester) async {
+  testWidgets('profile save failure leaves started runtime open', (
+    tester,
+  ) async {
     final profiles = TrackingProfilesRepository(failSave: true);
     final dependencies = _dependencies(profiles: profiles);
     await _openEditor(tester, dependencies);
@@ -103,7 +116,10 @@ void main() {
     expect(attempted, isNotNull);
     expect(persisted, isNotNull);
     expect(attempted, isNot(equals(persisted)));
-    expect(credentials.written, containsAll(<CredentialReference>[attempted!, persisted!]));
+    expect(
+      credentials.written,
+      containsAll(<CredentialReference>[attempted!, persisted!]),
+    );
     await _disposeApp(tester, dependencies);
   });
 
@@ -130,18 +146,65 @@ void main() {
     await _disposeApp(tester, dependencies);
   });
 
-  testWidgets('edit remains save-only with the same profile identity', (
+  testWidgets('replacement leaves one runtime and one session record', (
     tester,
   ) async {
-    final profiles = TrackingProfilesRepository(initialProfiles: const [
-      SshProfile(
-        id: 'edit-profile',
-        name: 'Saved host',
-        host: 'saved.invalid',
+    final profiles = TrackingProfilesRepository();
+    final dependencies = _dependencies(profiles: profiles);
+    await _openEditor(tester, dependencies);
+    await _submit(tester, remember: false);
+    final firstRuntime = dependencies.terminalRuntimes.sessions.single;
+    final terminalContext = tester.element(
+      find.byKey(const Key('terminal-page')),
+    );
+
+    final launch = await dependencies.connect.connectWithSecret(
+      profile: const SshProfile(
+        id: 'replacement-profile',
+        name: 'Replacement',
+        host: 'replacement.invalid',
         port: 22,
         username: 'operator',
       ),
+      secret: _secret(tester),
+      remember: false,
+    );
+    ProfileConnector.openLaunch(
+      terminalContext,
+      launch,
+      title: 'Replacement',
+      replaceCurrent: true,
+    );
+    await tester.pump();
+    await tester.pump();
+
+    final sessions = terminalContext
+        .read<TerminalSessionsBloc>()
+        .state
+        .sessions;
+    expect(dependencies.terminalRuntimes.sessions, <TerminalSessionRuntime>[
+      launch.runtime,
     ]);
+    expect(dependencies.terminalRuntimes.find(firstRuntime.id), isNull);
+    expect(sessions.map((session) => session.id), <String>[launch.runtime.id]);
+    expect(find.byKey(const Key('terminal-page')), findsOneWidget);
+    await _disposeApp(tester, dependencies);
+  });
+
+  testWidgets('edit remains save-only with the same profile identity', (
+    tester,
+  ) async {
+    final profiles = TrackingProfilesRepository(
+      initialProfiles: const [
+        SshProfile(
+          id: 'edit-profile',
+          name: 'Saved host',
+          host: 'saved.invalid',
+          port: 22,
+          username: 'operator',
+        ),
+      ],
+    );
     final factory = PendingSessionFactory();
     final dependencies = _dependencies(profiles: profiles, factory: factory);
     await tester.pumpWidget(SurfTerminalApp(dependencies: dependencies));
@@ -151,7 +214,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('profile-host')), 'edited.invalid');
+    await tester.enterText(
+      find.byKey(const Key('profile-host')),
+      'edited.invalid',
+    );
     await tester.tap(find.widgetWithText(TextButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -175,7 +241,10 @@ AppDependencies _dependencies({
   sshSessionFactory: factory ?? PendingSessionFactory(),
 );
 
-Future<void> _openEditor(WidgetTester tester, AppDependencies dependencies) async {
+Future<void> _openEditor(
+  WidgetTester tester,
+  AppDependencies dependencies,
+) async {
   await tester.pumpWidget(SurfTerminalApp(dependencies: dependencies));
   await tester.pumpAndSettle();
   await tester.tap(find.byTooltip('Add host'));
@@ -185,9 +254,17 @@ Future<void> _openEditor(WidgetTester tester, AppDependencies dependencies) asyn
 Future<void> _submit(WidgetTester tester, {bool remember = true}) async {
   await tester.enterText(find.byKey(const Key('profile-host')), 'new.invalid');
   await tester.enterText(find.byKey(const Key('profile-username')), 'operator');
-  await tester.enterText(find.byKey(const Key('profile-password')), _secret(tester));
+  await tester.enterText(
+    find.byKey(const Key('profile-password')),
+    _secret(tester),
+  );
   if (!remember) {
     await tester.ensureVisible(find.byKey(const Key('remember-password')));
+    await tester.drag(
+      find.byKey(const PageStorageKey('connection-editor-scroll')),
+      const Offset(0, 120),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('remember-password')));
     await tester.pump();
   }
@@ -199,8 +276,13 @@ Future<void> _submit(WidgetTester tester, {bool remember = true}) async {
 String _secret(WidgetTester tester) =>
     'runtime-${identityHashCode(tester)}-${DateTime.now().microsecondsSinceEpoch}';
 
-Future<void> _disposeApp(WidgetTester tester, AppDependencies dependencies) async {
+Future<void> _disposeApp(
+  WidgetTester tester,
+  AppDependencies dependencies,
+) async {
   await tester.pumpWidget(const SizedBox.shrink());
+  final disposal = dependencies.dispose();
+  await tester.pump(const Duration(milliseconds: 100));
   await tester.pump();
-  await dependencies.dispose();
+  await disposal;
 }

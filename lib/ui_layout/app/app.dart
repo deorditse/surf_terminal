@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,7 @@ class _SurfTerminalAppState extends State<SurfTerminalApp>
     with WidgetsBindingObserver {
   late final AppDependencies _dependencies =
       widget.dependencies ?? AppDependencies.preview();
+  late final bool _ownsDependencies = widget.dependencies == null;
   late final ProfilesBloc _profilesBloc = ProfilesBloc(
     _dependencies.profilesRepository,
   );
@@ -56,7 +58,7 @@ class _SurfTerminalAppState extends State<SurfTerminalApp>
     _snippetsBloc.close();
     _terminalSessionsBloc.close();
     _settingsBloc.close();
-    unawaited(_dependencies.dispose());
+    if (_ownsDependencies) unawaited(_dependencies.dispose());
     super.dispose();
   }
 
@@ -71,11 +73,22 @@ class _SurfTerminalAppState extends State<SurfTerminalApp>
           BlocProvider.value(value: _terminalSessionsBloc),
           BlocProvider.value(value: _settingsBloc),
         ],
-        child: MaterialApp.router(
+        child: CupertinoApp.router(
           title: 'Surf Terminal',
           debugShowCheckedModeBanner: false,
-          theme: SurfTheme.dark(),
-          themeMode: ThemeMode.dark,
+          theme: const CupertinoThemeData(
+            brightness: Brightness.dark,
+            primaryColor: SurfColors.surf,
+            scaffoldBackgroundColor: SurfColors.ink,
+            barBackgroundColor: SurfColors.deep,
+          ),
+          localizationsDelegates: const [DefaultMaterialLocalizations.delegate],
+          builder: (context, child) => ScaffoldMessenger(
+            child: Theme(
+              data: SurfTheme.dark(),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
           routerConfig: _router,
         ),
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
-import 'package:surf_terminal/ui_layout/app/theme/app_theme.dart';
 import 'package:surf_terminal/ui_layout/pages/connections/widgets/profile_card.dart';
 import 'package:surf_terminal/ui_layout/shared/widgets/surf_components.dart';
 
@@ -30,14 +29,24 @@ class ConnectionsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = managementScrollTopPadding(context);
     if (profiles.isEmpty && query.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(SurfSpacing.md),
-        child: SurfEmptyState(
-          icon: Icons.dns_outlined,
-          title: 'No saved hosts',
-          description: 'Saved SSH hosts will appear here.',
-        ),
+      return CustomScrollView(
+        key: const PageStorageKey('connections-scroll'),
+        controller: scrollController,
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(16, topPadding, 16, 24),
+            sliver: const SliverFillRemaining(
+              hasScrollBody: false,
+              child: SurfEmptyState(
+                icon: Icons.dns_outlined,
+                title: 'No saved hosts',
+                description: 'Saved SSH hosts will appear here.',
+              ),
+            ),
+          ),
+        ],
       );
     }
 
@@ -46,7 +55,7 @@ class ConnectionsBody extends StatelessWidget {
       controller: scrollController,
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          padding: EdgeInsets.fromLTRB(16, topPadding, 16, 24),
           sliver: SliverList.list(
             children: [
               PageIntro(

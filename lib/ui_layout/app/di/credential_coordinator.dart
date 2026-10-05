@@ -68,6 +68,9 @@ final class CredentialCoordinator {
     }
   }
 
+  Future<void> cleanupTransient(CredentialReference reference) =>
+      _bestEffortDelete(reference);
+
   Future<void> _bestEffortDelete(CredentialReference reference) async {
     try {
       await _credentials.delete(reference);

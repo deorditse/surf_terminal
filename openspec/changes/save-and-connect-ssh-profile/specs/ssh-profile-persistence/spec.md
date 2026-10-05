@@ -32,7 +32,11 @@ Surf Terminal SHALL persist user-created non-secret profile fields in structured
 ## ADDED Requirements
 
 ### Requirement: Immediate connection respects credential retention
-A new profile connection SHALL authenticate through a transient opaque credential reference prepared for the first attempt. Profile persistence SHALL follow the selected retention policy independently: remembered passwords MUST be stored only through a separate permanent secure-storage reference, while retention-disabled profiles MUST persist without a credential reference. Password material MUST NOT be stored in the profile record, route arguments, serialized workflow state, diagnostics, fixtures or screenshots.
+A new profile connection SHALL authenticate through a transient opaque credential reference prepared for the first attempt. Secure retention SHALL be enabled by default wherever a password is entered, while remaining explicitly user-disableable. Profile persistence SHALL follow that policy independently: remembered passwords MUST be stored only through a separate permanent Keychain/Keystore-backed reference, while retention-disabled profiles MUST persist without a credential reference. Password material MUST NOT be stored in the profile record, SSH configuration fields, route arguments, serialized workflow state, diagnostics, fixtures, screenshots or terminal output.
+
+#### Scenario: Password entry opens
+- **WHEN** a new-host password field or explicit SSH password challenge is presented
+- **THEN** secure retention is enabled by default and the user can explicitly disable it before submission
 
 #### Scenario: User connects and remembers a password
 - **WHEN** the user submits a new profile with a non-empty password and secure retention enabled

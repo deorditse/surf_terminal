@@ -93,27 +93,44 @@ class _SessionPaneState extends State<SessionPane> {
       builder: (context, state) => ColoredBox(
         color: widget.preferences.terminalBackground,
         child: switch (state) {
-          SshSessionConnected() => Column(
-            children: [
-              Expanded(
-                child: TerminalViewport(
-                  runtime: widget.runtime,
-                  preferences: widget.preferences,
-                ),
-              ),
-              SpecialKeys(
-                control: _control,
-                alt: _alt,
-                onControl: () => setState(() => _control = !_control),
-                onAlt: () => setState(() => _alt = !_alt),
-                onSend: _send,
-                onPaste: _paste,
-                onHideKeyboard: () {
-                  widget.runtime.focusNode.unfocus();
-                  SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
-                },
-              ),
-            ],
+          SshSessionConnected() => LayoutBuilder(
+            builder: (context, _) {
+              final media = MediaQuery.of(context);
+              final controlBottom =
+                  (media.viewInsets.bottom > media.padding.bottom
+                      ? media.viewInsets.bottom
+                      : media.padding.bottom) +
+                  8;
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  TerminalViewport(
+                    runtime: widget.runtime,
+                    preferences: widget.preferences,
+                    controlBottomInset: controlBottom + 52,
+                  ),
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: controlBottom,
+                    child: SpecialKeys(
+                      control: _control,
+                      alt: _alt,
+                      onControl: () => setState(() => _control = !_control),
+                      onAlt: () => setState(() => _alt = !_alt),
+                      onSend: _send,
+                      onPaste: _paste,
+                      onHideKeyboard: () {
+                        widget.runtime.focusNode.unfocus();
+                        SystemChannels.textInput.invokeMethod<void>(
+                          'TextInput.hide',
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           SshSessionConnecting() => const TerminalSetupSurface(
             label: 'Connecting',

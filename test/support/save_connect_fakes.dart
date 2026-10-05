@@ -96,18 +96,22 @@ final class PendingSessionFactory implements SshSessionFactory {
 }
 
 final class PendingConnectionAttempt implements SshConnectionAttempt {
-  PendingConnectionAttempt(this.endpoint);
+  PendingConnectionAttempt(this.endpoint) {
+    _failureTimer = Timer(const Duration(milliseconds: 500), () {
+      if (!_presentedHostKey.isCompleted) {
+        _presentedHostKey.completeError(
+          const SshFailure.transport(message: 'Controlled test failure.'),
+        );
+      }
+    });
+  }
 
   final HostEndpoint endpoint;
+  final _presentedHostKey = Completer<PresentedHostKey>();
+  late final Timer _failureTimer;
 
   @override
-  Future<PresentedHostKey> get presentedHostKey =>
-      Future<PresentedHostKey>.delayed(
-        const Duration(milliseconds: 500),
-        () => throw const SshFailure.transport(
-          message: 'Controlled test failure.',
-        ),
-      );
+  Future<PresentedHostKey> get presentedHostKey => _presentedHostKey.future;
 
   @override
   Future<SshSession> get session => Future<SshSession>.error(
@@ -121,7 +125,14 @@ final class PendingConnectionAttempt implements SshConnectionAttempt {
   Future<void> rejectHostKey() async {}
 
   @override
-  Future<void> cancel() async {}
+  Future<void> cancel() async {
+    _failureTimer.cancel();
+    if (!_presentedHostKey.isCompleted) {
+      _presentedHostKey.completeError(
+        const SshFailure.cancelled(message: 'Connection cancelled.'),
+      );
+    }
+  }
 }
 
 final class EmptyKnownHosts implements KnownHostsRepository {

@@ -5,14 +5,11 @@ import 'package:surf_terminal/ui_layout/app/di/terminal_runtime_registry.dart';
 final class ConnectCoordinator {
   ConnectCoordinator({
     required CredentialCoordinator credentials,
-    required SecureCredentialStore credentialStore,
     required TerminalRuntimeRegistry runtimes,
   }) : _credentials = credentials,
-       _credentialStore = credentialStore,
        _runtimes = runtimes;
 
   final CredentialCoordinator _credentials;
-  final SecureCredentialStore _credentialStore;
   final TerminalRuntimeRegistry _runtimes;
 
   Future<ConnectLaunch> connectWithSecret({
@@ -33,7 +30,7 @@ final class ConnectCoordinator {
       );
       return ConnectLaunch(runtime: runtime, persistence: persistence);
     } on Object {
-      await _bestEffortDelete(prepared.reference);
+      await _credentials.cleanupTransient(prepared.reference);
       rethrow;
     }
   }
@@ -49,17 +46,9 @@ final class ConnectCoordinator {
     profile: profile,
     intent: remember
         ? const CredentialIntent.store()
-        : const CredentialIntent.preserve(),
+        : const CredentialIntent.remove(),
     secret: remember ? secret : null,
   );
-
-  Future<void> _bestEffortDelete(CredentialReference reference) async {
-    try {
-      await _credentialStore.delete(reference);
-    } on Object {
-      // The opaque reference cannot escape this coordinator after a failed handoff.
-    }
-  }
 }
 
 final class ConnectLaunch {

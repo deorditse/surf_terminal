@@ -77,7 +77,8 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
 
         return Scaffold(
           key: const Key('connections-page'),
-          appBar: AppBar(
+          extendBodyBehindAppBar: true,
+          appBar: ManagementAppBar(
             title: const Text('Surf Terminal'),
             actions: [
               IconButton(

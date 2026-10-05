@@ -36,7 +36,7 @@ class AppShellPage extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final expanded = constraints.maxWidth >= 760;
-        final body = SafeArea(child: navigationShell);
+        final body = SafeArea(top: false, child: navigationShell);
         if (expanded) {
           return Scaffold(
             body: Row(

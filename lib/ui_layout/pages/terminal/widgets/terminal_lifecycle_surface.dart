@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class TerminalSetupSurface extends StatelessWidget {
   const TerminalSetupSurface({required this.label, super.key});
@@ -10,7 +10,7 @@ class TerminalSetupSurface extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(),
+        const CupertinoActivityIndicator(radius: 14),
         const SizedBox(height: 16),
         Text(label),
       ],
@@ -43,8 +43,11 @@ class TerminalFailureSurface extends StatelessWidget {
             alignment: WrapAlignment.center,
             spacing: 8,
             children: [
-              FilledButton(onPressed: onRetry, child: const Text('Retry')),
-              TextButton(
+              CupertinoButton.filled(
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
+              CupertinoButton(
                 onPressed: onProfiles,
                 child: const Text('SSH profiles'),
               ),

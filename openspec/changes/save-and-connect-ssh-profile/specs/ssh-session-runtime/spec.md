@@ -3,7 +3,15 @@
 ## MODIFIED Requirements
 
 ### Requirement: SSH connection lifecycle is explicit
-Surf Terminal SHALL represent the single active real SSH session with explicit disconnected, connecting, verifying-host-key, authenticating, waiting-for-external-authentication, connected, reconnecting, and failed states. During incomplete setup the terminal route SHALL show a centered `CircularProgressIndicator` and concise lifecycle label. A Tailscale check-mode challenge SHALL open only a strictly validated `https://login.tailscale.com/a/<opaque-token>` URI in the external system browser, keep its raw banner and URI ephemeral, and continue the current SSH authentication attempt when possible. The interface MUST NOT display connected or expose an interactive terminal before server identity, user authentication and remote PTY/shell creation have succeeded.
+Surf Terminal SHALL represent the single active real SSH session with explicit disconnected, connecting, verifying-host-key, authenticating, waiting-for-password, waiting-for-external-authentication, connected, reconnecting, and failed states. During incomplete setup the terminal route SHALL show a centered `CupertinoActivityIndicator` and concise lifecycle label. After PTY/shell creation, remote stdout and stderr SHALL be forwarded verbatim to xterm in transport delivery order. Local DNS, transport, protocol, host-key, authentication and PTY/shell failures SHALL use safe normalized Cupertino-first lifecycle messages outside the remote xterm buffer. An explicit repeated server password challenge SHALL use an obscured `CupertinoAlertDialog` over the terminal route and MUST NOT echo password material into xterm or observable workflow state. A Tailscale check-mode challenge SHALL open only a strictly validated `https://login.tailscale.com/a/<opaque-token>` URI in the external system browser, keep its raw banner and URI ephemeral, and continue the current SSH authentication attempt when possible. The interface MUST NOT display connected or expose an interactive terminal before server identity, user authentication and remote PTY/shell creation have succeeded.
+
+#### Scenario: Server requests another password
+- **WHEN** password authentication is rejected and the SSH server explicitly permits another password or password-classified keyboard-interactive response
+- **THEN** an obscured lifecycle-safe dialog appears over the terminal route, retention is enabled by default, and submitted text returns only to the pending SSH authentication callback
+
+#### Scenario: Password challenge is cancelled
+- **WHEN** the user cancels the secure password dialog
+- **THEN** authentication ends in a safe actionable state without writing the prompt or password to terminal output, profile fields, routes, persistence logs or BLoC state
 
 #### Scenario: User selects a persisted profile
 - **WHEN** the user selects an SSH profile from the home screen
@@ -41,6 +49,10 @@ Surf Terminal SHALL represent the single active real SSH session with explicit d
 - **WHEN** host-key verification and SSH authentication complete successfully and the server grants the PTY/shell
 - **THEN** the session enters connected state and exposes the expanded remote interactive terminal
 
+#### Scenario: Remote shell emits stdout and stderr
+- **WHEN** connected remote PTY/shell emits ordinary output, error output or ANSI/control sequences
+- **THEN** the session output contract forwards the exact payloads to xterm in transport delivery order without application rewriting or lifecycle decoration
+
 #### Scenario: Connection fails
 - **WHEN** DNS, TCP, protocol negotiation, authentication or shell creation fails
-- **THEN** the session enters a centered actionable failure state with retry and return controls and a safe message containing no credential material
+- **THEN** the session enters a centered actionable terminal-style failure state with retry and return controls and a safe normalized message containing no credential, prompt, raw banner or one-time URL material, and that local failure is not appended to xterm

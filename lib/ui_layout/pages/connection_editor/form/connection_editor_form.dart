@@ -63,7 +63,12 @@ class ConnectionEditorForm extends StatelessWidget {
       key: formKey,
       child: SingleChildScrollView(
         key: const PageStorageKey('connection-editor-scroll'),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          managementScrollTopPadding(context),
+          16,
+          32,
+        ),
         child: Column(
           children: [
             const PageIntro(

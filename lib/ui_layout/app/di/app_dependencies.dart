@@ -36,10 +36,10 @@ final class AppDependencies {
       factory: factory,
       knownHosts: hosts,
       credentials: store,
+      cleanupTransient: credentials.cleanupTransient,
     );
     connect = ConnectCoordinator(
       credentials: credentials,
-      credentialStore: store,
       runtimes: terminalRuntimes,
     );
   }

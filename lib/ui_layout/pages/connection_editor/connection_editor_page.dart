@@ -7,6 +7,7 @@ import 'package:surf_terminal/ui_layout/app/di/app_dependencies.dart';
 import 'package:surf_terminal/ui_layout/pages/connection_editor/form/connection_editor_controllers.dart';
 import 'package:surf_terminal/ui_layout/pages/connection_editor/form/connection_editor_form.dart';
 import 'package:surf_terminal/ui_layout/pages/connections/profile_connector.dart';
+import 'package:surf_terminal/ui_layout/shared/widgets/surf_components.dart';
 
 class ConnectionEditorPage extends StatefulWidget {
   const ConnectionEditorPage({this.profileId, super.key});
@@ -87,11 +88,7 @@ class _ConnectionEditorPageState extends State<ConnectionEditorPage> {
       }
       if (secret.isEmpty) {
         if (!mounted) return;
-        await ProfileConnector.connect(
-          context,
-          profile,
-          replaceCurrent: true,
-        );
+        await ProfileConnector.connect(context, profile, replaceCurrent: true);
         if (mounted) setState(() => _saving = false);
         return;
       }
@@ -144,7 +141,9 @@ class _ConnectionEditorPageState extends State<ConnectionEditorPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    key: const Key('connection-editor-page'),
+    extendBodyBehindAppBar: true,
+    appBar: ManagementAppBar(
       title: Text(_existing == null ? 'New host' : 'Edit host'),
       actions: [
         TextButton(

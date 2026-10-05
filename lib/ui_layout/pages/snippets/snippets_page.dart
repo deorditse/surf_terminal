@@ -60,20 +60,29 @@ class _SnippetsPageState extends State<SnippetsPage> {
         }).toList();
         return Scaffold(
           key: const Key('snippets-page'),
-          appBar: AppBar(title: const Text('Snippets')),
+          extendBodyBehindAppBar: true,
+          appBar: ManagementAppBar(title: const Text('Snippets')),
           body: ManagementSurface(
             child: SafeArea(
               top: false,
               child: state.snippets.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: SurfEmptyState(
-                        icon: Icons.code_rounded,
-                        title: 'No snippets',
-                        description: 'Reusable commands will appear here.',
-                        actionLabel: 'Add snippet',
-                        onAction: () => context.push('/snippets/new'),
+                  ? ListView(
+                      key: const PageStorageKey('snippets-scroll'),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        managementScrollTopPadding(context),
+                        16,
+                        24,
                       ),
+                      children: [
+                        SurfEmptyState(
+                          icon: Icons.code_rounded,
+                          title: 'No snippets',
+                          description: 'Reusable commands will appear here.',
+                          actionLabel: 'Add snippet',
+                          onAction: () => context.push('/snippets/new'),
+                        ),
+                      ],
                     )
                   : SnippetsList(
                       snippets: snippets,

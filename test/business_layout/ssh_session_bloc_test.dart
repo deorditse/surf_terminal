@@ -3,6 +3,7 @@ import 'package:surf_terminal/business_layout/business_layout.dart';
 import 'package:surf_terminal/domain_layout/domain_layout.dart';
 
 import 'support/ssh_session_fakes.dart';
+import '../support/save_connect_fakes.dart';
 
 void main() {
   test(
@@ -116,6 +117,24 @@ void main() {
       await bloc.stream.where((state) => state is SshSessionVerifying).first;
 
       expect(factory.index, 1);
+    },
+  );
+
+  test(
+    'close completes while the initial connection attempt is pending',
+    () async {
+      final bloc = SshSessionBloc(
+        factory: PendingSessionFactory(),
+        knownHosts: FakeKnownHosts(),
+      );
+      bloc.add(
+        const SshSessionEvent.connectRequested(fakeProfile, fakeDimensions),
+      );
+      await bloc.stream.where((state) => state is SshSessionConnecting).first;
+
+      await bloc.close().timeout(const Duration(seconds: 1));
+
+      expect(bloc.isClosed, isTrue);
     },
   );
 }
