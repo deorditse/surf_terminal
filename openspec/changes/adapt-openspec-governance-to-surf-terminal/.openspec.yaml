@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-10-11
+goal: Replace copied React monitoring governance and OpenSpec templates with
+  Surf Terminal-specific Flutter/Dart rules

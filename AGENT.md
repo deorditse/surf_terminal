@@ -1,78 +1,49 @@
 # Surf Terminal Engineering Guide
 
-This file is the authoritative engineering contract for people and AI agents working in this repository. It defines the required workflow, architecture, security boundaries, stack, and quality gates for the Flutter SSH client.
+This file is the authoritative engineering contract for people and AI agents working in this repository. It defines the required workflow, architecture, security boundaries, presentation rules, and quality gates for the Flutter SSH client.
 
-Normative words **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are intentional. If a task needs an exception, propose it through OpenSpec before implementation. The rationale for accepted architectural choices lives in [`docs/adr/`](docs/adr/README.md).
+Normative words **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are intentional. Canonical behavior lives in `openspec/specs/`; long-term rationale lives in accepted records under `docs/adr/`; `rules.md` is a shorter operational checklist and MUST NOT override this guide.
 
 ## 1. Mandatory OpenSpec workflow
 
-Every change to source code, dependencies, configuration, platform projects, tests, or project documentation MUST use OpenSpec.
-
-### Workflow
+Changes to source code, dependencies, configuration, platform projects, tests, project documentation, or engineering governance MUST use OpenSpec.
 
 ```text
 request
-  → show the proposed OpenSpec command, purpose, and expected effect
+  → announce discovery/planning commands and their effect
   → obtain approval for planning writes
-  → create or update proposal/spec/design/tasks
-  → show validation results and planned scope
-  → obtain explicit approval for apply
+  → create or update proposal/specs/design/tasks
+  → validate and show the planned scope
+  → obtain explicit apply approval
   → implement only the approved scope
-  → verify and report actual command results
+  → verify with real command/device evidence
+  → decide “ready for archive approval” or “continue work”
   → obtain explicit approval before archive
 ```
 
-### Command visibility and approval gates
+Before an OpenSpec command, show the exact command, purpose, whether it writes state, and expected effect. Read-only discovery MAY run after that announcement. Explicit approval is REQUIRED before creating a change, writing planning artifacts, applying a change, archiving, or performing destructive actions.
 
-Before running an OpenSpec command, show:
+Planning approval is not apply approval. Apply approval is not archive approval. Never rewrite an existing active change merely because the project default schema changed.
 
-1. the exact command;
-2. why it is needed;
-3. whether it is read-only or writes state;
-4. its expected effect.
+If implementation reveals a material scope, behavior, architecture, security, compatibility, migration, or acceptance change, STOP and update planning through a separately approved write before continuing.
 
-Read-only discovery commands MAY run after this announcement without another approval. Examples:
+## 2. Repository shape and dependency direction
 
-```bash
-openspec list --json
-openspec context --json
-openspec status --change "<change>" --json
-openspec show "<spec>" --type spec
-openspec instructions <artifact> --change "<change>" --json
-openspec validate "<change>" --strict
-```
-
-Explicit user approval is REQUIRED before:
-
-- creating a change;
-- creating or editing planning artifacts;
-- applying a change;
-- archiving a change;
-- destructive or irreversible operations.
-
-Approval for proposal/planning is not approval for apply. Approval for apply is not approval for archive.
-
-If implementation reveals a material scope, behavior, architecture, compatibility, security, or acceptance-criteria change, STOP. Show the required planning update and obtain approval before editing OpenSpec artifacts or continuing implementation.
-
-## 2. Architecture
-
-Use **single-package layout Clean Architecture**. Surf Terminal is one Flutter application whose domain, data, business logic, and presentation responsibilities are explicit `*_layout` directories under `lib/`.
-
-### Target structure
+Surf Terminal is one Flutter package using explicit `*_layout` Clean Architecture directories:
 
 ```text
 lib/
 ├── main.dart
-├── domain_layout/            # pure Dart entities, failures and contracts
-├── data_layout/              # SSH, persistence and platform adapters
-├── business_layout/          # BLoCs, use cases and policies
+├── domain_layout/            # pure Dart entities, values, failures, contracts
+├── data_layout/              # SSH, persistence, secure-storage, platform adapters
+├── business_layout/          # BLoCs, use cases, workflow policies
 └── ui_layout/
-    ├── app/                  # bootstrap, DI, lifecycle, router and theme
-    ├── pages/                # explicit routed surfaces and local modules
+    ├── app/                  # bootstrap, DI, lifecycle, router, theme
+    ├── pages/                # routed surfaces and page-local widgets
     └── shared/               # genuinely reused presentation components
 ```
 
-### Dependency direction
+Dependency direction:
 
 ```text
 business_layout ─────→ domain_layout ←───── data_layout
@@ -82,283 +53,193 @@ business_layout ─────→ domain_layout ←───── data_layout
 
 Rules:
 
-- `lib/domain_layout` MUST be pure Dart and MUST NOT import Flutter, BLoC, GetIt, persistence, secure storage, dartssh2, xterm, or platform APIs.
-- `lib/domain_layout` owns entities, value objects, repository/session contracts, failures, result types, and business policies.
-- `lib/data_layout` depends only on domain layout. It implements domain contracts and contains DTOs, mappers, persistence adapters, secure-storage adapters, SSH adapters, and platform integrations.
-- `lib/business_layout` depends only on domain layout. It owns BLoCs, events, states, use cases, and orchestration policies; it MUST NOT import data layout.
-- `lib/ui_layout/app/di` is the only place allowed to construct concrete data implementations or resolve them with GetIt.
-- Pages MUST receive BLoCs/controllers through constructor or provider composition and MUST NOT construct infrastructure dependencies.
-- Dependencies `business_layout → data_layout`, `data_layout → business_layout`, `domain_layout → Flutter`, page → data layout, and hidden service-locator access outside the composition root are prohibited and MUST be covered by an architecture test.
-- Every routed surface belongs under `lib/ui_layout/pages/<page>/`; page-specific widgets stay with their page. Move a component to `lib/ui_layout/shared` only after genuine cross-page reuse.
+- `domain_layout` MUST remain pure Dart. It MUST NOT import Flutter, BLoC, persistence, secure storage, dartssh2, xterm, or platform APIs.
+- `domain_layout` owns entities, value objects, failures, result types, repository/session contracts, and business/security policies.
+- `data_layout` depends on domain only. It owns DTOs, mappers, sqflite, protected storage, dartssh2, and platform adapters.
+- `business_layout` depends on domain only. It owns BLoCs, events, states, use cases, and workflow orchestration; it MUST NOT import data layout.
+- `ui_layout/app/di` is the composition root for concrete adapters. Use explicit constructor/provider wiring; do not hide infrastructure lookup in pages or BLoCs.
+- Pages MUST consume business/domain APIs and MUST NOT import concrete data adapters.
+- Each routed surface belongs under `ui_layout/pages/<page>/`. Keep page-specific widgets there; move a widget to `ui_layout/shared` only after real reuse.
+- The architecture boundary test under `test/architecture/` MUST cover prohibited imports and composition-root access.
 
-### Use cases
+Create a use case when it contains a business rule, coordinates multiple contracts, enforces a policy, or is reused. Do not add mechanical one-line wrappers only to satisfy a diagram.
 
-Create a use case when it contains a business rule, coordinates multiple repositories, enforces security/policy, or is reused. Do not wrap a one-line repository call in a mechanical use-case class solely to satisfy a diagram.
+## 3. Current stack
 
-## 3. Approved stack
+`pubspec.yaml` and `pubspec.lock` are the source of truth. The current project uses:
 
-The project uses Flutter 3.47.5 and Dart 3.13.4. The following snapshot was resolved together with `flutter pub get` on 2026-09-26. Before changing `pubspec.yaml`, query the current stable compatible versions again; the snapshot is not permission to skip dependency resolution.
-
-The compatibility probe reported all direct runtime dependencies up to date. For development dependencies, `freezed 4.0.1` is the newest mutually resolvable version in this graph even though `4.0.2` is published.
-
-### Runtime dependencies
-
-| Package | Version | Role |
-|---|---:|---|
-| `flutter_bloc` | `^9.1.1` | UI workflow and session state |
-| `bloc_concurrency` | `^0.3.0` | explicit event concurrency |
-| `freezed_annotation` | `^3.1.0` | immutable models and sealed unions |
-| `json_annotation` | `^4.12.0` | JSON annotations for persisted DTOs |
-| `get_it` | `^9.3.0` | composition-root dependency container |
-| `go_router` | `^18.0.1` | navigation |
-| `dartssh2` | `^4.1.0` | SSH transport, authentication, shell and PTY |
-| `xterm` | `^4.0.0` | terminal emulator and terminal buffer |
-| `flutter_secure_storage` | `^11.2.0` | secrets in Keychain/Keystore-backed storage |
-| `sqflite` | `^2.4.4` | direct SQLite persistence for structured non-secret data |
-| `path_provider` | `^2.1.6` | application filesystem locations |
-| `uuid` | `^4.6.0` | stable profile and session identifiers |
-| `logger` | `^2.8.0` | diagnostics behind a redacting wrapper |
-
-### Development dependencies
-
-| Package | Version | Role |
-|---|---:|---|
-| `freezed` | `^4.0.1` | compatible Freezed generator selected by the resolver |
-| `json_serializable` | `^6.14.1` | JSON code generation |
-| `build_runner` | `^2.16.1` | code-generation runner |
-| `bloc_test` | `^10.0.0` | BLoC tests |
-| `mocktail` | `^1.0.5` | mocks where fakes are impractical |
-| `flutter_lints` | `^6.0.0` | baseline static-analysis rules |
-| `flutter_test` | Flutter SDK | unit and widget testing |
-| `integration_test` | Flutter SDK | device integration testing |
+- Flutter/Dart;
+- `bloc`, `flutter_bloc`, and `bloc_concurrency` for workflows;
+- `freezed_annotation`, `freezed`, and `build_runner` for immutable unions/generated code;
+- `go_router` for navigation;
+- `dartssh2` behind domain contracts for SSH;
+- a pinned xterm.dart Git revision for terminal emulation;
+- `sqflite` for structured non-secret data and `sqflite_common_ffi` in tests;
+- `flutter_secure_storage` for secrets;
+- `liquid_glass_widgets` only for approved compact overlay controls;
+- `flutter_test` and `integration_test` for automated/device coverage.
 
 Dependency rules:
 
-- NEVER use `any` in committed `pubspec.yaml` files.
-- Do not add `dependency_overrides` unless a temporary incompatibility is documented with reason, owner/removal condition, and an OpenSpec/ADR reference.
-- Prefer SDK packages and existing dependencies over adding overlapping libraries.
+- NEVER commit `any` constraints or an unreviewed `dependency_overrides` workaround.
+- Prefer SDK capabilities and existing dependencies over overlapping packages.
 - Commit `pubspec.lock` for this application.
-- A dependency change is incomplete until `flutter pub get`, `flutter pub outdated`, analysis, and tests have been run and reported.
+- Dependency changes require an approved OpenSpec scope, `flutter pub get`, `flutter pub outdated`, analysis, tests, and platform build evidence where applicable.
+- Do not assume a dependency exists because it appeared in an older guide; inspect `pubspec.yaml` and neighbouring imports first.
 
-## 4. State management
+## 4. BLoC and workflow state
 
-Use Flutter BLoC for user-visible workflows and SSH session control.
+Use explicit `Bloc<Event, State>` for user-visible workflows and SSH session control.
 
-- Events and states MUST be immutable and SHOULD use Freezed sealed unions.
+- Events and states MUST be immutable and SHOULD use Freezed sealed unions where the project already uses generated unions.
 - Model lifecycle states explicitly rather than with unrelated booleans.
-- Inject dependencies through the BLoC constructor.
-- NEVER call `GetIt.I`, a global service locator, secure storage, sqflite, or dartssh2 directly from a BLoC.
-- Side effects belong behind domain contracts and data implementations.
-- Use `bloc_concurrency` intentionally:
-  - `droppable()` for repeated connect/submit actions that must not overlap;
-  - `restartable()` for superseded searches or validation;
-  - `sequential()` when order is part of correctness;
-  - default concurrent handling only when operations are independent.
-- Close BLoCs, subscriptions, SSH sessions, shell channels, stream controllers, and database handles at the scope that owns them.
+- Dependencies enter through constructors/providers.
+- BLoCs MUST NOT access concrete SSH, sqflite, protected storage, or global locators directly.
+- Side effects belong behind domain contracts and data adapters.
+- Choose event concurrency intentionally: `droppable()` for duplicate submits/connects, `restartable()` for superseded searches/validation, `sequential()` when order is correctness, and concurrent handling only for independent work.
+- Reject stale async completions when the selected profile/session/request has changed.
+- Close BLoCs, subscriptions, SSH sessions, shell channels, stream controllers, terminals, and database handles at the scope that owns them.
 
-## 5. SSH session model
+High-frequency terminal bytes are not growing BLoC state. Stream shell output to the session-owned xterm buffer; keep control-plane lifecycle, IDs, prompts, and recoverable errors in workflow state.
 
-A session MUST expose an implementation-independent domain contract. `dartssh2` types MUST NOT escape the data layer.
+## 5. SSH and terminal invariants
 
-Minimum lifecycle states:
+`dartssh2` types MUST NOT escape `data_layout`. A session contract exposes project-defined domain types.
 
-```text
-Disconnected
-Connecting
-VerifyingHost
-Authenticating
-Connected
-Reconnecting
-Disconnecting
-ConnectionFailed
-```
+Minimum lifecycle concepts include disconnected, connecting, host verification, authenticating, connected, reconnecting, disconnecting, and failed.
 
-Session rules:
+- Every terminal tab owns a unique session ID, workflow/controller, SSH connection, shell channel, terminal buffer, and cleanup scope.
+- Connect/disconnect/reconnect/authentication/host-verification transitions MUST be explicit and testable.
+- User disconnect cancels reconnect. Retry policies MUST be bounded and cancellable.
+- PTY dimensions follow xterm dimensions; resize forwarding SHOULD be debounced.
+- Mobile suspension can invalidate sockets. On resume, detect stale transport and expose a clear reconnect path instead of promising permanent background SSH.
+- Software and hardware Enter MUST send one carriage return byte (`13`) to the active terminal.
+- Preserve terminal focus while overlay controls are used unless the action intentionally moves focus.
+- Remote/SSH errors shown in the terminal MUST preserve their original meaning and useful detail. Redact only secret material; do not replace actionable errors with generic text.
 
-- Each terminal tab owns a unique `sessionId`, session BLoC/controller, SSH session, shell channel, terminal buffer, and cleanup scope.
-- Connect, disconnect, reconnect, authentication, and host-verification transitions MUST be explicit and testable.
-- User-requested disconnect MUST cancel reconnect attempts.
-- Reconnect policies MUST be bounded and cancellable; do not implement infinite silent retries.
-- PTY dimensions MUST track xterm dimensions. Resize requests SHOULD be debounced and forwarded to the remote PTY.
-- Assume iOS and Android may suspend or terminate TCP connections in background. Never promise an indefinitely persistent background SSH session.
-- On foreground resume, detect stale transport and expose an explicit reconnect path.
+## 6. Security and secrets
 
-### Terminal data path
+Security requirements are mandatory acceptance criteria.
 
-Raw terminal output is high-frequency data and MUST NOT be appended to a growing global BLoC state.
+### Secret storage
 
-```text
-SSH shell stdout/stderr
-  → session stream adapter
-  → xterm Terminal buffer
-  → terminal widget repaint
-```
+- Passwords, private keys, key passphrases, and sensitive tokens belong only in protected storage or short-lived memory.
+- SQLite stores non-secret profile/known-host/settings data and opaque references to secret entries.
+- Secrets MUST NOT appear in BLoC states, generated `toString()`, logs, analytics, crash reports, fixtures, screenshots, terminal-history persistence, or user-visible diagnostics.
+- Do not persist terminal transcripts by default. Such a feature requires its own threat model, OpenSpec change, and ADR.
 
-BLoC state contains control-plane information only: lifecycle status, profile/session identifiers, verification prompts, recoverable errors, and user-visible metadata.
+### Host verification
 
-Terminal input flows from xterm to the active shell channel through the session adapter. Flow control, UTF-8 boundaries, binary data, resize, and disposal MUST be handled without rebuilding the whole application for every chunk.
+- Production code MUST NOT unconditionally accept host keys.
+- Unknown hosts pause before authentication and require explicit fingerprint confirmation.
+- Mismatched known hosts block connection with a high-severity warning; do not silently replace trust records.
+- Known-host metadata and credentials remain separate.
+- Updating/removing trust records requires an explicit user action.
 
-## 6. Security
+### Diagnostics
 
-Security requirements are not optional acceptance criteria.
-
-### Secrets
-
-- Passwords, private keys, key passphrases, and sensitive tokens MUST be stored only in `flutter_secure_storage` or held in memory for the minimum necessary lifetime.
-- SQLite stores only non-secret profile data and opaque references to secure entries.
-- Secrets MUST NOT appear in BLoC states, Freezed `toString()`, logs, analytics, crash reports, exceptions shown to users, fixtures, screenshots, or persisted terminal history.
-- Clear temporary secret buffers/references as soon as practical.
-- Do not persist terminal transcripts by default. Any future transcript feature requires a separate threat model, OpenSpec change, and ADR.
-
-### Host-key verification
-
-- NEVER use unconditional acceptance such as `onVerifyHostKey: (...) => true`.
-- Store known-host entries separately from credentials with host, port, algorithm, fingerprint, first-seen, and last-confirmed metadata.
-- For an unknown host, pause before authentication and show the fingerprint for explicit user confirmation.
-- For a mismatched known host, block the connection and display a high-severity warning. Do not offer a default one-tap silent replacement.
-- Updating or deleting a known-host record requires an explicit user action and audit-friendly UI copy.
-
-### Logging
-
-All diagnostics go through a redacting logger wrapper. Redact at minimum:
-
-- passwords and passphrases;
-- private-key material;
-- authorization data;
-- raw keyboard input;
-- terminal output unless an explicitly approved diagnostic mode says otherwise;
-- user-controlled connection strings that embed secrets.
-
-Release logging MUST be minimal. Debug logging MUST still obey redaction.
+- Sanitize credentials, private-key material, authorization values, and input that may contain secrets.
+- Preserve stack traces and transport context only in a redacted diagnostic path.
+- Never log raw terminal output by default.
+- Release diagnostics stay minimal; debug mode still obeys redaction.
 
 ## 7. Persistence
 
-Use sqflite as the direct SQLite adapter for connection profiles, labels, known-host metadata, snippets, non-secret settings, and non-sensitive session metadata. Use secure storage for secret values.
+Use sqflite directly in `data_layout` for structured non-secret data and protected storage for secret values.
 
-- Database tables, SQL, migrations, and persisted DTOs belong only in `packages/data`.
+- Tables, SQL, persisted DTOs, mappers, and migrations belong in `lib/data_layout/`.
 - Domain entities MUST NOT carry sqflite types or persistence annotations.
-- Map DTOs to domain entities explicitly.
-- Keep an explicit schema version. Every schema change MUST have an ordered transactional `onCreate`/`onUpgrade` migration and tests from each supported prior version.
-- Enable and test foreign-key constraints. Repository integration tests MUST cover transactions, rollback, uniqueness, and referential integrity.
-- Repositories expose domain contracts and convert storage/library exceptions to typed failures.
-- Coordinate profile deletion with deletion of referenced secure-storage entries and handle partial failure explicitly.
-- Avoid SharedPreferences for structured domain data. It MAY be used only for trivial UI preferences when SQLite would add no value and the choice is documented.
+- Map persisted DTOs to domain entities explicitly.
+- Keep an explicit schema version. Schema changes require ordered transactional migrations and tests from every supported previous version.
+- Enable/test foreign keys, uniqueness, transactions, rollback, and referential integrity.
+- Convert storage/library exceptions to typed domain failures at the adapter boundary.
+- Coordinate deletion of a profile with deletion of its referenced protected secret and specify partial-failure recovery.
 
-## 8. Errors and Result
+## 8. Models and generated code
 
-Use a small sealed `Result<T, Failure>` abstraction or an equivalent project-defined type.
-
-- Domain failures describe meaning, not vendor exception classes.
-- Catch library and platform exceptions at the data boundary.
-- Preserve stack traces for redacted diagnostics.
-- Map failures to localized user messages in presentation.
-- Do not catch `Error` as recoverable application behavior.
-- Never expose raw exception strings that may contain secrets or infrastructure details.
-
-Suggested failure families include validation, authentication, host-key, transport, timeout, protocol, storage, permission, cancellation, and unexpected failures.
-
-## 9. Models and code generation
-
-- Use Freezed for immutable domain entities, DTOs, BLoC events, and BLoC states when unions/copy semantics provide value.
-- Use `json_serializable` only for serialized DTOs; domain entities do not require JSON by default.
-- Keep DTOs and mappers in the data layer.
+- Use Freezed for immutable entities, DTOs, events, and states where unions/copy semantics are useful and consistent with neighbouring code.
 - Generated files (`*.freezed.dart`, `*.g.dart`, and configured generator output) MUST NOT be edited manually.
-- Do not create placeholder generated directories or files. A global `lib/generated` directory is allowed only when a configured generator writes there.
-- Commit generated application files consistently.
-
-Generate code with:
+- Do not create placeholder generated directories or empty generated files.
+- After annotation changes run:
 
 ```bash
 dart run build_runner build
 ```
 
-After changing annotated types, regenerate before analysis and tests.
+- Verify generation produced a non-empty expected inventory and a second run is reproducible.
 
-## 10. Navigation and UI
+## 9. Cupertino-first presentation
 
-Use `go_router`. Initial route areas are:
+The root application MUST use `CupertinoApp.router`. Visible application chrome SHOULD use Cupertino widgets. A narrowly scoped Material compatibility wrapper is allowed only when an existing package or API requires it; it MUST NOT turn the app shell into `MaterialApp` or introduce Material-looking chrome.
 
-```text
-/connections
-/connections/new
-/connections/:profileId/edit
-/terminal/:sessionId
-/snippets
-/snippets/new
-/snippets/:snippetId/edit
-/known-hosts
-/settings
-```
+Terminal presentation rules:
 
-- Route parameters MUST use stable identifiers, not full serialized models.
-- Resolve data after navigation through a BLoC/use case/repository.
-- Keep screens declarative; business rules do not belong in widgets.
-- Extract reusable UI only after real reuse or a stable design-system need appears.
-- Terminal UI MUST preserve focus, keyboard behavior, selection, text scaling policy, and safe-area behavior on both iOS and Android.
+- terminal sessions use a strict dark background continuous with the page background;
+- the terminal occupies the maximum available screen area with minimal insets;
+- top/session controls may overlay terminal content instead of reserving a colored rectangle;
+- terminal controls remain compact and icon-only when the icon is understandable;
+- management app bars are transparent and content scrolls beneath them;
+- preserve focus, selection, software keyboard, IME resize, safe areas, and text scaling behavior on iOS and Android;
+- maintain semantics/tooltips for icon-only controls;
+- golden changes require an approved visual behavior change and visual review, not blind image regeneration.
 
-## 11. Testing strategy
+Use project colors/tokens from the live theme. Do not introduce a second visual system in a page-local change.
 
-Prefer fakes over mocks for domain contracts and transports.
+## 10. Navigation
 
-### Unit tests
+Use `go_router` and stable IDs in route parameters. Do not serialize entire models into routes. Resolve data after navigation through BLoCs/use cases/repositories.
 
-Cover:
+Current route families include connections, terminal sessions, snippets, known hosts, and settings. Inspect the live router before adding or changing paths. A route contract change requires usage search, tests, compatibility analysis, and OpenSpec approval.
 
-- domain policies and value objects;
-- BLoC transitions and event concurrency;
-- reconnect/cancellation behavior;
-- host-key decisions;
-- mappers and failure conversion;
-- redaction;
-- database migrations.
+## 11. Test-first implementation
 
-### Contract and integration tests
+Deterministic production behavior MUST use `RED → GREEN → REFACTOR`.
 
-- Run repository contracts against fake/in-memory and real local implementations where practical.
-- Test SSH adapters against a controlled local/test SSH server or deterministic fake transport, never an unstable public server.
-- Test secure-storage behavior behind an adapter; do not require real user secrets.
+1. Add the smallest focused automated scenario.
+2. Run it and observe the expected failure caused by missing/incorrect behavior.
+3. Implement the smallest approved slice.
+4. Run the focused GREEN test and relevant regressions.
+5. Refactor only while tests remain green.
 
-### Widget tests
+A defect fix starts with a reproducing regression test. A test that passes before implementation is not RED evidence.
 
-Cover critical flows:
+Meaningful exceptions are limited to generated output, documentation/configuration where no deterministic behavior exists, one-off spikes, or environment-gated device/external behavior. The exception and substitute evidence MUST be explicit in `design.md` and `tasks.md`; a skipped device smoke is never reported as passed.
 
-- create/edit a connection profile;
-- first-use host-key confirmation;
-- changed-host-key warning;
-- authentication and connection failures;
-- terminal connect/disconnect/reconnect controls;
-- session-tab ownership and disposal.
+Use the narrowest applicable layers:
 
-Every bug fix MUST include a regression test unless the OpenSpec explicitly documents why a deterministic test is impossible.
+- pure Dart/unit tests for values, policies, mappers, redaction, and failures;
+- BLoC tests for transitions, concurrency, cancellation, and stale events;
+- repository/adapter tests for sqflite, protected storage, and SSH boundaries;
+- architecture tests for dependency direction;
+- widget/golden tests for UI, focus, overlays, and lifecycle states;
+- `integration_test` or a disposable localhost SSH harness for real boundaries;
+- device/emulator checks for keyboard, IME, lifecycle, and platform behavior.
+
+Never use real user credentials or an unstable public SSH server in automated tests.
 
 ## 12. ADR policy
 
-Significant architecture decisions MUST be recorded in [`docs/adr/`](docs/adr/README.md).
+Read `docs/adr/README.md` and applicable accepted ADRs before a significant design change.
 
-Create an ADR when choosing or changing:
+Create a new ADR when changing a long-term architecture boundary, primary coupled library, persistence/security policy, protocol abstraction, cross-feature contract, or governance rule. Do not create one for a local implementation detail. Never rewrite accepted history; supersede it with a new numbered ADR and cross-links.
 
-- an architectural pattern or layer boundary;
-- a primary framework/library with long-term coupling;
-- persistence or security policy;
-- a protocol/transport abstraction;
-- a cross-feature contract;
-- a quality or delivery governance rule.
+OpenSpec does not automatically create ADRs. The change design/tasks must explicitly create or update the record when required.
 
-Do not create an ADR for local implementation details that do not affect long-term boundaries, public contracts, security, data, or maintainability.
+## 13. Editing and repository safety
 
-Naming:
+- Keep edits inside the approved scope and do not revert unrelated user changes.
+- Inspect definitions and all usages before changing a symbol or contract.
+- Match neighbouring style; avoid drive-by renames, formatting, or refactors.
+- Do not commit, push, rewrite history, or run destructive Git commands unless requested.
+- Do not read, print, or commit secrets and credential files.
+- Never claim a check passed without real command output.
+- A structural OpenSpec validation is not proof that guidance matches the repository; also verify paths, dependencies, commands, and forbidden stale terms.
 
-```text
-ADR-NNNN-kebab-case-title.md
-```
+## 14. Definition of done
 
-Numbers are sequential and never reused. Do not rewrite accepted history. When a decision changes, create a new ADR, mark the old ADR `Superseded`, and link both documents.
+A change is complete only when every approved task has evidence and applicable checks pass.
 
-## 13. Definition of done
-
-A change is complete only when all approved OpenSpec tasks are complete and the relevant checks pass.
-
-Required commands:
+Default repository gates:
 
 ```bash
 dart format --set-exit-if-changed .
@@ -366,25 +247,24 @@ flutter analyze
 flutter test
 ```
 
-When dependencies change:
-
-```bash
-flutter pub get
-flutter pub outdated
-```
-
-When generated sources change:
+Additional gates as applicable:
 
 ```bash
 dart run build_runner build
-git diff --exit-code -- '*.freezed.dart' '*.g.dart'
+flutter pub get
+flutter pub outdated
+flutter build apk --debug
+flutter build ios --debug --no-codesign
+openspec validate "<change>" --strict
 ```
 
 Also verify:
 
-- no secrets or sensitive terminal content are logged or persisted;
-- dependency direction remains valid;
-- resources and sessions are disposed;
-- new significant decisions have ADRs;
-- documentation and OpenSpec tasks match actual behavior;
-- actual command output is reported; success is never inferred from intent.
+- no secrets or sensitive terminal content were logged/persisted;
+- dependency direction and composition-root boundaries remain valid;
+- resources/sessions/subscriptions are disposed;
+- generated output is reproducible;
+- required adapter/platform/device evidence is recorded separately;
+- documentation, ADRs, specs, and task checkboxes match actual behavior;
+- unrelated working-tree changes remain untouched;
+- the final report explicitly says either **ready for separate archive approval** or **continue work**.

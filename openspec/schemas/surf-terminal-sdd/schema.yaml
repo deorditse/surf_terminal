@@ -1,0 +1,156 @@
+name: surf-terminal-sdd
+version: 1
+description: >-
+  Project-local SDD workflow for Surf Terminal, a Flutter/Dart mobile SSH client:
+  proposal → specs → design → tasks.
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Motivation, scope, capability impact, and project surfaces.
+    template: proposal.md
+    requires: []
+    instruction: |
+      Establish WHY the change is needed and WHAT project behavior or governance changes.
+      Do not prescribe implementation details that belong in design.md.
+
+      Before writing:
+      - Read AGENT.md, rules.md, openspec/config.yaml, applicable canonical specs,
+        active changes, and accepted ADRs under docs/adr/.
+      - Inspect the live source/tests/configuration relevant to the request. Never infer
+        a path, dependency, widget, adapter, or test harness that is not present.
+
+      Required content:
+      - Why: the problem/opportunity and why it matters now.
+      - What Changes: concrete in-scope outcomes; mark BREAKING changes explicitly.
+      - Non-goals: exclusions that prevent scope creep.
+      - Affected Surfaces: applicable paths under lib/domain_layout, lib/data_layout,
+        lib/business_layout, lib/ui_layout, test, integration_test, platform projects,
+        assets, docs, and openspec.
+      - Capabilities: exact new or modified capability paths. Use skip_specs: true only
+        for genuinely non-behavioral work when no canonical requirement changes.
+      - Impact: security/secrets/host trust, persistence/migrations, UI/accessibility,
+        compatibility, dependencies/code generation, tests/device smoke, and active
+        change coordination. State “not affected” where a high-risk area was checked.
+
+      Keep the proposal concise and reviewable. Do not treat a high-level request as
+      apply approval; planning, apply, and archive remain separate gates.
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Observable requirements and testable scenarios for each capability.
+    template: spec.md
+    requires:
+      - proposal
+    instruction: |
+      Define WHAT must be true from a user, downstream consumer, security, reliability,
+      or governance perspective. Do not name internal classes/functions or write a
+      step-by-step implementation plan.
+
+      Create one delta file per capability listed in proposal.md at
+      specs/<capability-path>/spec.md. Reuse exact existing capability paths.
+
+      Parser-critical delta operations use level-two headings exactly:
+      - ## ADDED Requirements
+      - ## MODIFIED Requirements
+      - ## REMOVED Requirements
+      - ## RENAMED Requirements
+
+      Every requirement uses `### Requirement: <name>` and normative MUST/SHALL text.
+      Every scenario uses exactly `#### Scenario: <name>` and testable GIVEN/WHEN/THEN
+      bullets. For MODIFIED requirements, copy the complete canonical requirement and
+      every existing scenario before editing. REMOVED requirements require Reason and
+      Migration. New capabilities start with a 50+ character Purpose; existing ones do not.
+
+      Cover applicable happy paths, error/empty/cancel/retry states, security/privacy,
+      persistence/restart behavior, accessibility/input/focus, lifecycle/disposal,
+      compatibility, and environment constraints. Keep implementation choices in design.md.
+
+  - id: design
+    generates: design.md
+    description: Technical approach, boundaries, decisions, verification, and migration.
+    template: design.md
+    requires:
+      - proposal
+      - specs
+    instruction: |
+      Explain HOW the approved requirements will be implemented.
+
+      Start by reading AGENT.md, rules.md, applicable canonical specs, relevant source/tests,
+      and accepted ADRs. Record the live architecture profile rather than copying a pattern:
+      - one Flutter package;
+      - domain_layout is pure Dart;
+      - business_layout and data_layout depend only on domain_layout;
+      - ui_layout composes all layers, with concretes created in ui_layout/app/di;
+      - feature workflows use explicit Freezed Bloc<Event, State> events/states;
+      - terminal output streams directly to a session-owned xterm buffer;
+      - non-secret structured data uses sqflite and secrets use protected storage;
+      - production SSH verifies host keys and never bypasses trust checks;
+      - visible app chrome is Cupertino-first, while terminal rendering remains xterm.
+
+      Required sections:
+      - Context and constraints (reference proposal instead of repeating motivation).
+      - Goals / Non-goals.
+      - Applicable ADRs and whether a new/superseding ADR is required.
+      - Layer/file placement and dependency direction.
+      - Workflow/state/concurrency and ownership/disposal.
+      - Security, credential, host-key, logging, and data flow where applicable.
+      - Persistence/migration/rollback where applicable.
+      - UI, navigation, focus/keyboard, accessibility, and terminal behavior where applicable.
+      - Decisions with alternatives and rationale.
+      - Verification strategy: focused RED/GREEN tests, architecture/generation checks,
+        adapter/integration harnesses, platform builds, and device/environment smoke.
+      - Risks / Trade-offs, Migration Plan, and only genuinely deferrable Open Questions.
+
+      If an unanswered question changes requirements, architecture, security, acceptance,
+      or task breakdown, resolve it with the user before tasks.md.
+
+  - id: tasks
+    generates: tasks.md
+    description: Ordered, verifiable implementation checklist.
+    template: tasks.md
+    requires:
+      - specs
+      - design
+    instruction: |
+      Produce an apply checklist ordered by dependency. The apply parser requires every
+      tracked task to be `- [ ] N.N description` under numbered `## N. Heading` sections.
+
+      Each task must be small enough for one working session, cite the relevant requirement
+      or state “outside requirements”, and contain its own verification evidence.
+
+      For deterministic production behavior use RED → GREEN:
+      - name the focused automated scenario and exact RED command;
+      - require the observed failure to be caused by the missing/incorrect behavior;
+      - implement the smallest approved slice;
+      - run the GREEN command and relevant regression checks;
+      - keep defect reproductions as regression tests.
+
+      Configuration, documentation, generated output, and environment-gated behavior may
+      use a justified non-RED verification path when no meaningful deterministic failing
+      test exists. Keep automated gating separate from real device/emulator or external
+      harness evidence; a skipped smoke is not a passed behavior.
+
+      Include applicable groups for baseline/scope, focused tests, implementation by layer,
+      code generation reproducibility, architecture/security scans, repository/SSH adapter
+      integration, widget/golden verification, platform builds, device keyboard/real-SSH
+      smoke, documentation/ADR/context synchronization, strict OpenSpec validation, and
+      final diff/quality gates. End with explicit archive-versus-continue reporting.
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Apply only after explicit approval for this named change. Before editing, read proposal,
+    specs, design, tasks, AGENT.md, rules.md, and applicable ADRs; capture git status so
+    unrelated user changes remain untouched.
+
+    Work through tasks in order and mark only tasks supported by real file/command evidence.
+    Follow RED → GREEN for deterministic behavior. Stop and return to planning approval if
+    implementation requires a material scope, behavior, architecture, security, compatibility,
+    or acceptance change. Never expose secrets or use real credentials in fixtures/logs.
+
+    Run the exact applicable verification in tasks.md, report environment-gated checks
+    separately, re-run strict OpenSpec validation, and explicitly state whether the change is
+    ready for separate archive approval or needs continued work. Apply approval is not archive
+    approval.

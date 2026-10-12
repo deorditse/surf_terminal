@@ -1,32 +1,46 @@
-schema: spec-driven
+schema: surf-terminal-sdd
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Surf Terminal is a single-package Flutter/Dart mobile SSH client.
+  Architecture: lib/domain_layout is pure Dart; lib/business_layout and
+  lib/data_layout depend only on domain_layout; lib/ui_layout composes them,
+  and concrete adapters are created only under lib/ui_layout/app/di.
+  Workflows use explicit Freezed Bloc<Event, State> events/states where useful.
+  SSH uses dartssh2 behind domain contracts with mandatory host-key verification;
+  xterm owns high-frequency terminal buffers. sqflite stores structured non-secrets,
+  while flutter_secure_storage stores secret values/references.
+  Presentation is Cupertino-first with CupertinoApp.router, dark fullscreen terminal
+  surfaces, compact icon-only overlay controls, transparent app bars, and preserved
+  focus/keyboard/IME behavior. AGENT.md is the authoritative engineering contract;
+  rules.md is its operational checklist. Canonical behavior lives in openspec/specs
+  and long-term rationale in accepted docs/adr records.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Inspect live source, tests, canonical specs, active changes, and applicable ADRs before naming scope.
+    - Include Non-goals, affected *_layout/test/platform/config/docs paths, security/data/UI impact, compatibility, and verification impact.
+    - Keep implementation details in design.md and keep planning/apply/archive approvals separate.
+  specs:
+    - Use exact OpenSpec delta headings, complete normative requirements, and exactly four-hash GIVEN/WHEN/THEN scenarios.
+    - Cover applicable error, cancellation, retry, security, persistence, accessibility, lifecycle, and environment behavior.
+    - Keep internal class, widget, adapter, and file choices out of behavioral requirements.
+  design:
+    - Reconcile every path, dependency, and architectural claim with the live repository and accepted ADRs.
+    - State layer placement, dependency direction, workflow concurrency/ownership, security/data flow, UI/input behavior, verification, migration, and rollback.
+    - Create a new ADR only for a new long-term decision; never rewrite accepted ADR history.
+  tasks:
+    - Use parseable numbered checkboxes and order work by dependency.
+    - Require named RED and GREEN evidence for deterministic behavior; justify substitute evidence for configuration, generated output, or environment-gated checks.
+    - Separate automated gates from platform/device/localhost-SSH evidence and end with strict validation plus archive-versus-continue reporting.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+operations:
+  apply:
+    guidance:
+      - Read proposal, specs, design, tasks, AGENT.md, rules.md, and applicable ADRs before editing.
+      - Capture git status and preserve unrelated user changes; implement only the approved scope.
+      - Mark tasks complete only after real file/command evidence and return to planning if material scope changes.
+      - Never expose secrets or use real credentials in tests, logs, screenshots, or fixtures.
+  archive:
+    guidance:
+      - Archive only after explicit archive approval, all tasks are reconciled, strict validation passes, and required automated/environment evidence is reported.
+      - State whether canonical specs changed as intended and identify any remaining follow-up instead of hiding incomplete work.
